@@ -1,0 +1,10 @@
+B4:B15
+
+=LET(
+idTdy; MATCH(B$21; C$3:Y$3); 
+idZp; MATCH(B$20; C$3:Y$3); 
+rowPay; OFFSET(B$3; ROW(B4)-3; 1; 1; 24); 
+gTdy; GTE( INDEX( rowPay; ;idTdy); B$21); 
+lZp; LTE( INDEX( rowPay; ;idZp); B$20); 
+IF(EQ(idTdy; idZp); AND(gTdy;lZp); OR(gTdy;lZp))
+)
