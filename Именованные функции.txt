@@ -1,0 +1,8 @@
+INDEX_ZP()
+Возвращает строку поступления средств с листа Операции
+=LET(idOmb; MATCH(Сегодня+MIN(28;ДеньZ-Сегодня); 'Операции'!$B:$B; -1); 
+idTdy; MATCH(Сегодня; 'Операции'!$B:$B; -1); 
+idZp; IFNA(MATCH("ЗП"; OFFSET('Операции'!$F$1; idOmb; 0; idTdy-idOmb); 0); -1); 
+idAv; IFNA(MATCH("Аванс"; OFFSET('Операции'!$F$1; idOmb;0; idTdy-idOmb); 0); -1); 
+idOmb+MAX(idZp; idAv))
+
