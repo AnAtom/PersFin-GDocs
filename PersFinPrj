@@ -20,22 +20,23 @@ indent_mode=2
 [project]
 name=PersFin-GDocs
 base_path=/home/kondakovde2/work/PersFin-GDocs
+description=
 
 [long line marker]
 long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=9
-FILE_NAME_0=0;Markdown;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FREADME.md;0;4
+current_page=6
+FILE_NAME_0=92;Markdown;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FREADME.md;0;4
 FILE_NAME_1=485;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FИменованные%20функции.txt;0;4
 FILE_NAME_2=171;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FИменованные%20диапазоны.txt;0;4
 FILE_NAME_3=7;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FУсловное%20форматирование.txt;0;4
-FILE_NAME_4=0;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FbillUtils.gs;0;4
-FILE_NAME_5=2629;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FdataUtils.gs;0;4
-FILE_NAME_6=938;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FdbgUtils.gs;0;4
+FILE_NAME_4=2610;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FbillUtils.gs;0;4
+FILE_NAME_5=2847;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FdataUtils.gs;0;2
+FILE_NAME_6=1218;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FdbgUtils.gs;0;4
 FILE_NAME_7=38975;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FPersFin.gs;0;2
-FILE_NAME_8=471;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FstrUtils.gs;0;4
+FILE_NAME_8=1947;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FstrUtils.gs;0;4
 FILE_NAME_9=155;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2Ftmp%2FPersFin.gs.txt;0;2
 
 [VTE]

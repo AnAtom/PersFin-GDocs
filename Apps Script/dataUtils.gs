@@ -1,8 +1,8 @@
 /*
 
-findInRange(rangeName, s)
-findInRule(ruleName, s)
-getMonthNum(sMonth, capitalLetter)
+findInRange(rangeName, s) - Поиск в именованном диапазоне.
+findInRule(ruleName, s) - Поиск в списке выбора значения именованного диапазона.
+getMonthNum(sMonth, capitalLetter) - Возвращает номер месяца по названию.
 
 */
 
@@ -81,7 +81,8 @@ function GetGDriveFolderIdFromURL(rng)
     {
       ranges: rng,
       fields: 'sheets.data.rowData.values.hyperlink'
-    }).sheets[0]
+    })
+    .sheets[0]
     .data[0]
     .rowData[0]
     .values[0]

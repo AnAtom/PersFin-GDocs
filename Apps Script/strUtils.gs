@@ -1,8 +1,8 @@
 /*
 
-between(str, start, end)
-between2(str, start1, end1, start2, end2)
-between2from(sStr, fPos, start1, end1, start2, end2)
+between(str, start, end) - Возвращает подстроку между двумя строками
+between2(str, start1, end1, start2, end2) - Возвращает подстроку из подстроки
+between2from(sStr, fPos, start1, end1, start2, end2) - Возвращает подстроку из подстроки после заданной позиции
 
 */
 

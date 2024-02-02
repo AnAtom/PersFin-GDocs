@@ -1,13 +1,14 @@
 /* 
 
-billFormatText(sBill)
-billInfo(sBill)
-billAllInfo(sBill)
+billFormatText(sBill) - Разбивает строку JSON на несколько строк для читаемости. Удаляет ненужное начало и хвост.
+billInfo(sBill) - Возвращает Дату, Сумму и Магазин чека из json строки.
+billAllInfo(sBill) - Возвращает информацию о чеке, включая список продуктов.
 
+*/
 
-JSON нового формата
+// JSON нового формата
 
-[{"_id":"65b01a0cae17240837f960c2","createdAt":"2024-01-23T19:57:00+00:00","ticket":{"document":{"receipt":
+/* [{"_id":"65b01a0cae17240837f960c2","createdAt":"2024-01-23T19:57:00+00:00","ticket":{"document":{"receipt":
 
 {"cashTotalSum":0,"code":3,"creditSum":0,
 "dateTime":"2024-01-23T22:58:00","ecashTotalSum":169000,"fiscalDocumentFormatVer":2,
@@ -29,8 +30,7 @@ JSON нового формата
 "totalSum":169000,
 "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"НИКО\"","userInn":"7724009233  "}
 
-}}}]
-*/
+}}}] */
 
 // Разбивает строку JSON на несколько строк для читаемости. Удаляем '[{"_id": ... "ticket":{"document":{"receipt":', '}}}]'
 function billFormatText(sBill)
@@ -75,9 +75,10 @@ function billInfo(sBill)
   return {date: sDate, summ: sSumm, name: sName, cash: sCash};
 }
 
+// Возвращает информацию о чеке, включая список продуктов.
 function billAllInfo(sBill)
 {
-  const inf = billInfo(sBill);
+  let inf = billInfo(sBill);
 
   let bItems = [];
   let iName = "";
@@ -110,6 +111,6 @@ function billAllInfo(sBill)
     i = sBill.indexOf("\"name\":", j);
   }
 
-  // Logger.log(sName);
-  return {date: inf.date, summ: inf.summ, name: inf.name, cash: inf.cash, items: bItems};
+  inf.items = bItems;
+  return inf;
 }

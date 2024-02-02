@@ -1,8 +1,8 @@
 /*
 
-dbgGetDbgFlag(clearTest)
-dbgClearTestSheet()
-dbgSplitLongString(sStr, maxLngth)
+dbgGetDbgFlag(clearTest) - Возвращает значение флага ФлОтладка. Если true и аргумент true, то очищает лист Test.
+dbgClearTestSheet() - Очищает и активирует лист Test.
+dbgSplitLongString(sStr, maxLngth) - Разбивает длинную строку на набор строк длиной maxLngth.
 
 */
 
@@ -42,7 +42,7 @@ function dbgSplitLongString(sStr, maxLngth)
     sArr.push(sStr.slice(n, k));
     n += maxLngth;
     k += maxLngth;
-  } while (sStr.length > l);
+  } while (sStr.length > n);
 
   return sArr;
 }
