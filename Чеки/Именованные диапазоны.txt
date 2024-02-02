@@ -1,0 +1,70 @@
+
+ФлагОтладки
+
+ЧекиДиск		- Папка с чеками
+ЧекиПочта		- Метка чеков в почте
+
+ДатаЧек0		- Дата начала сканирования чеков
+ДатаЧекZ		- Дата окончания сканирования чеков
+
+ДатаЧекДиск		- Дата последнего чека на диске
+ДатаЧекПочта	- Дата последнего чека в почте
+
+ШаблоныЧеков
+
+ОФД	Такском	Платформа	Beeline
+From	noreply@taxcom.ru	noreply@chek.pofd.ru	ofdreceipt@beeline.ru
+Key	taxcom	platformaofd	ofd.beeline
+Name t	0	1	1
+Name s1	<tbody>	<div class="check-top	<table class="body
+Name e1	</body>	/div>	/p>
+Name s2	<text>Данный чек подтверждает совершение расчетов в <b>	<div style=	<p style=
+Name e2	</b>.</text>	<	<
+Date s1	<span class="value receipt-value-1012"	Приход	Дата | Время
+Date e1	</td>	<div class="check-row	</tr>
+Date s2	>	check-col-right	align="right">
+Date e2	</span>	</div>	</td>
+Total s1	<span class="value receipt-value-1020"	Итог	Итог:
+Total e1	</td>	<div class="check-row	</tr>
+Total s2	>	check-col-right	<span style=
+Total e2	</span>	</div>	</span>
+Cache s1	<span class="value receipt-value-1081	НАЛИЧНЫМИ	Наличные
+Cache e1	</td>	<div class="check-row	</tr>
+Cache s2	>	check-col-right	<span style=
+Cache e2	</span>	</div>	</span>
+FN s1	<span class="value receipt-value-1041	N ФН	<table class="body
+FN e1	</td>	<div class="check-row	</body>
+FN s2	>	check-col-right	ФН:
+FN e2	</span>	</div>	<br />
+FD s1	<span class="value receipt-value-1040	N ФД	<table class="body
+FD e1	</td>	<div class="check-row	</body>
+FD s2	>	check-col-right	ФД:
+FD e2	</span>	</div>	<br />
+FP s1	<span class="value receipt-value-1077	ФП	<table class="body
+FP e1	</td>	<div class="check-row	</body>
+FP s2	>	check-col-right	ФПД:
+FP e2	</span>	</div>	<br />
+Items s1	<div class="items">		
+Items e1			
+Items s2			
+Items e2			
+Item s1	<div class="item">		
+Item e1			
+Item s2			
+Item e2			
+iName s1	<span class="value receipt-value-1030		
+iName e1			
+iName s2			
+iName e2			
+iQuantity s1	<span class="value receipt-value-1023		
+			
+			
+			
+iPrice s1	<span class="value receipt-value-1079		
+			
+			
+			
+iSum s1	<span class="value receipt-value-1043		
+			
+			
+iSum  e2			

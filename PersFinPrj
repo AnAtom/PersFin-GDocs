@@ -27,7 +27,7 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=6
+current_page=12
 FILE_NAME_0=92;Markdown;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FREADME.md;0;4
 FILE_NAME_1=485;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FИменованные%20функции.txt;0;4
 FILE_NAME_2=171;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FИменованные%20диапазоны.txt;0;4
@@ -35,9 +35,12 @@ FILE_NAME_3=7;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2
 FILE_NAME_4=2610;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FbillUtils.gs;0;4
 FILE_NAME_5=2847;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FdataUtils.gs;0;2
 FILE_NAME_6=1218;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FdbgUtils.gs;0;4
-FILE_NAME_7=38975;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FPersFin.gs;0;2
+FILE_NAME_7=10370;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FPersFin.gs;0;2
 FILE_NAME_8=1947;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FApps%20Script%2FstrUtils.gs;0;4
-FILE_NAME_9=155;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2Ftmp%2FPersFin.gs.txt;0;2
+FILE_NAME_9=1950;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FЧеки%2FstrUtils.gs;0;4
+FILE_NAME_10=0;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FЧеки%2FMailTools.gs;0;4
+FILE_NAME_11=215;Javascript;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FЧеки%2FTrigers.gs;0;4
+FILE_NAME_12=24;None;0;EUTF-8;1;1;0;%2Fhome%2Fkondakovde2%2Fwork%2FPersFin-GDocs%2FЧеки%2FИменованные%20диапазоны.txt;0;4
 
 [VTE]
 last_dir=/home/kondakovde2
