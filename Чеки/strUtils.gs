@@ -4,17 +4,19 @@ between(str, start, end) - Возвращает подстроку между д
 between2(str, start1, end1, start2, end2) - Возвращает подстроку из подстроки
 between2from(sStr, fPos, start1, end1, start2, end2) - Возвращает подстроку из подстроки после заданной позиции
 
+dbgSplitLongString(sStr, maxLngth) - Разбиваем длинную строку ( >50000 ) на массив строк по maxLngth символов
+
 */
 
 //Возвращает подстроку между двумя строками
 function between(str, start, end) {
   let startAt = str.indexOf(start);
   if (startAt == -1)
-    return undefined;
+    return "";
   startAt += start.length;
   const endAt = str.indexOf(end, startAt);
   if (endAt == -1)
-    return undefined;
+    return "";
   return str.slice(startAt, endAt);
 }
 
@@ -22,19 +24,19 @@ function between(str, start, end) {
 function between2(str, start1, end1, start2, end2) {
   let startAt1 = str.indexOf(start1);
   if (startAt1 == -1)
-    return undefined;
+    return "";
   startAt1 += start1.length;
   const endAt1 = str.indexOf(end1, startAt1);
   if (endAt1 == -1)
-    return undefined;
+    return "";
   const s = str.slice(startAt1, endAt1);
   let startAt2 = s.indexOf(start2);
   if (startAt2 == -1)
-    return undefined;
+    return "";
   startAt2 += start2.length;
   const endAt2 = s.indexOf(end2, startAt2);
   if (endAt2 == -1)
-    return undefined;
+    return "";
   return s.slice(startAt2, endAt2).trim();
 }
 
@@ -57,4 +59,19 @@ function between2from(sStr, fPos, start1, end1, start2, end2) {
   if (endAt2 == -1)
     return zs;
   return s.slice(startAt2, endAt2).trim();
+}
+
+// Разбиваем длинную строку ( >50000 ) на несколько строк по maxLngth символов
+function dbgSplitLongString(sStr, maxLngth)
+{
+  let n = 0;
+  let k = maxLngth;
+  let sArr = [];
+  do {
+    sArr.push(sStr.slice(n, k));
+    n += maxLngth;
+    k += maxLngth;
+  } while (sStr.length > n);
+
+  return sArr;
 }

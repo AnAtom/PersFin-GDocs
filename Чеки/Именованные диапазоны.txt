@@ -12,46 +12,52 @@
 
 ШаблоныЧеков
 
-ОФД	Такском	Платформа	Beeline
-From	noreply@taxcom.ru	noreply@chek.pofd.ru	ofdreceipt@beeline.ru
-Key	taxcom	platformaofd	ofd.beeline
-Name t	0	1	1
-Name s1	<tbody>	<div class="check-top	<table class="body
-Name e1	</body>	/div>	/p>
-Name s2	<text>Данный чек подтверждает совершение расчетов в <b>	<div style=	<p style=
-Name e2	</b>.</text>	<	<
-Date s1	<span class="value receipt-value-1012"	Приход	Дата | Время
-Date e1	</td>	<div class="check-row	</tr>
-Date s2	>	check-col-right	align="right">
-Date e2	</span>	</div>	</td>
-Total s1	<span class="value receipt-value-1020"	Итог	Итог:
-Total e1	</td>	<div class="check-row	</tr>
-Total s2	>	check-col-right	<span style=
-Total e2	</span>	</div>	</span>
-Cache s1	<span class="value receipt-value-1081	НАЛИЧНЫМИ	Наличные
-Cache e1	</td>	<div class="check-row	</tr>
-Cache s2	>	check-col-right	<span style=
-Cache e2	</span>	</div>	</span>
-FN s1	<span class="value receipt-value-1041	N ФН	<table class="body
-FN e1	</td>	<div class="check-row	</body>
-FN s2	>	check-col-right	ФН:
-FN e2	</span>	</div>	<br />
-FD s1	<span class="value receipt-value-1040	N ФД	<table class="body
-FD e1	</td>	<div class="check-row	</body>
-FD s2	>	check-col-right	ФД:
-FD e2	</span>	</div>	<br />
-FP s1	<span class="value receipt-value-1077	ФП	<table class="body
-FP e1	</td>	<div class="check-row	</body>
-FP s2	>	check-col-right	ФПД:
-FP e2	</span>	</div>	<br />
-Items s1	<div class="items">		
+ОФД	Такском	Beeline	Платформа
+From	noreply@taxcom.ru	ofdreceipt@beeline.ru	noreply@chek.pofd.ru
+Key	taxcom	ofd.beeline	platformaofd
+Name pt	0	2	1
+Name s1	<text>Данный чек подтверждает совершение расчетов в <b>	<table class="body	<!-- Название -->
+Name e1	</b>.</text>	/p>	</span>
+Name s2		<p style=	<b>
+Name e2		<	</b>
+Date pt	1	1	2
+Date s1	<span class="value receipt-value-1012"	Дата | Время	<span>Приход</span>
+Date e1	</td>	</tr>	<!-- /dateTimeString -->
+Date s2	>	align="right">	<span style=
+Date e2	</span>	</td>	</span>
+Total pt	1	2	1
+Total s1	<span class="value receipt-value-1020"	Итог:	<b>ИТОГ</b>
+Total e1	</td>	</tr>	<!-- /ИТОГ -->
+Total s2	>	<span style=	<b> = <span>
+Total e2	</span>	</span>	</span>
+Cache pt	1	2	2
+Cache s1	<span class="value receipt-value-1031	Наличные	>НАЛИЧНЫМИ<
+Cache e1	</td>	</tr>	</table>
+Cache s2	>	<span style=	<span style=
+Cache e2	</span>	</span>	</span>
+FN pt	1	0	2
+FN s1	<span class="value receipt-value-1041	ФН:	>N ФН<
+FN e1	</td>	<br	</table>
+FN s2	>		<span style=
+FN e2	</span>		</span>
+FD pt	1	0	2
+FD s1	<span class="value receipt-value-1040	ФД:	>N ФД<
+FD e1	</td>	<br	</table>
+FD s2	>		<span style=
+FD e2	</span>		</span>
+FP pt	1	0	2
+FP s1	<span class="value receipt-value-1077	ФПД:	>ФПД<
+FP e1	</td>	<br	</table>
+FP s2	>		<span style=
+FP e2	</span>		</span>
+Items s1	<div class="items">	АССОВЫЙ ЧЕК	<!-- Предоплата -->
 Items e1			
 Items s2			
 Items e2			
-Item s1	<div class="item">		
-Item e1			
-Item s2			
-Item e2			
+Item s1	<div class="item">		<!-- itemName -->
+Item e1			<!-- /itemName -->
+Item s2			<b>
+Item e2			</b>
 iName s1	<span class="value receipt-value-1030		
 iName e1			
 iName s2			
@@ -64,7 +70,7 @@ iPrice s1	<span class="value receipt-value-1079
 			
 			
 			
-iSum s1	<span class="value receipt-value-1043		
+iSum s1	<span class="value receipt-value-1043		<!-- Общая стоимость позиции -->
 			
 			
 iSum  e2			

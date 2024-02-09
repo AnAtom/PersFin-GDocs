@@ -4,105 +4,84 @@
 
 */
 
-// Разбиваем длинную строку ( >50000 ) на несколько строк по maxLngth символов
-function dbgSplitLongString(sStr, maxLngth)
-{
-  let n = 0;
-  let k = maxLngth;
-  let sArr = [];
-  do {
-    sArr.push(sStr.slice(n, k));
-    n += maxLngth;
-    k += maxLngth;
-  } while (sStr.length > n);
-
-  return sArr;
-}
-
-/*
-
-From
-Key
-
-Name t
-Name s1
-Name e1
-Name s2
-Name e2
-
-Date s1
-Total s1
-Cache s1
-FN s1
-FD s1
-FP s1
-Items s1
-Item s1
-iName s1
-iQuantity s1
-iPrice s1
-iSum s1
-
-*/
-
-function GetTemplates()
-{
-  //
-}
-
 function ScanMail()
 {
-  //
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
+  const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
 
   // Читаем дату последнего обработанного письма с чеком
-  const rLastBillDate = ss.getRangeByName('ДатаЧекПочта');
-  let dLastBillDate = rLastBillDate.getValue();
-  const sLastBillDate = dLastBillDate.toString();
-  if (sLastBillDate == "") {
-    //
-    dLastBillDate = ss.getRangeByName('ДатаЧек0').getValue();
-    Logger.log("Принимаем дату последнего чека в почте: " + dLastBillDate.toString());
-  }
-  else
-    Logger.log("Дата последнего чека в почте: " + sLastBillDate);
+  const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
+  let dLastMailDate = rLastMailDate.getValue();
+  const sLastMailDate = dLastMailDate.toString();
+  if (sLastMailDate == "") {
+    dLastMailDate = ss.getRangeByName('ДатаЧек0').getValue();
+    Logger.log("Принимаем дату последнего чека в почте: " + dLastMailDate.toString());
+  } else
+    Logger.log("Дата последнего чека в почте: " + sLastMailDate);
 
-  let newLastBillDate = dLastBillDate;
+  let newLastMailDate = dLastMailDate;
   let NumBills = 0;
 
   // Читаем метку, под которой собраны чеки, из ячейки ЧекиПочта
   const sLabel = ss.getRangeByName('ЧекиПочта').getValue();
   Logger.log("Читаем чеки из почты с меткой: " + sLabel);
 
+  // Читаем шаблоны для сканера
+  const eTmplts = GetTemplates(ss.getRangeByName('ШаблоныЧеков'));
+
   const mailThreads = GmailApp.getUserLabelByName(sLabel).getThreads();
-  let i = mailThreads.length - 1;
-  for (let i = 0; i < mailThreads.length; i++) {
+  let thrd = 0;
+  for (messages of mailThreads) {
 
-    let messages = mailThreads[i].getMessages();
-    for (let j = 0; j < messages.length; j++) {
-      let dDate = messages[j].getDate();
+    let m = 1;
+    for (message of messages.getMessages()) {
+      let dDate = message.getDate();
+      if (dDate < dLastMailDate) continue;
 
-      let sFrom = messages[j].getFrom();
+      let sFrom = message.getFrom();
       let sFromMail = between(sFrom, "<", ">");
-      let sSubject = messages[j].getSubject();
-      let sBody = messages[j].getBody();
-      if (j == 1) {
-        let arrS = dbgSplitLongString(sBody, 49000);
-        ss.getSheetByName('DBG').getRange(1, 1).setValue(arrS[0]);
+      let iTmplt = FindInTemplates(eTmplts, sFromMail);
+      if (iTmplt == -1)
+      {
+        Logger.log("Неизвестный источник чека :" + sFrom);
+        continue;
       }
 
-      //Logger.log( dDate.toISOString() + " e-Mail " + i + "#" + j + " > " + sSubject + " [[[ "+ sBody.length.toString() +" ]]] From: " + sFrom + " <" );
+      let sSubject = message.getSubject();
+      let sBody = message.getBody();
+
+      /*
+      const arrS = dbgSplitLongString(sBody, 49000);
+      let n = 0;
+      for (S of arrS) rDBG.offset(l, n++).setValue(S);
+      l++;
+      */
+
+      Logger.log( dDate.toISOString() + " e-Mail " + thrd + "#" + m++ + " > " + sSubject + " [[[ "+ sBody.length.toString() +" ]]] From: " + sFrom + " <" );
+
+      /*
+      if (sFromMail == "noreply@chek.pofd.ru")
+        Logger.log(" Платформа " + l);
+      if (sFromMail == "ofdreceipt@beeline.ru")
+        Logger.log(" Beeline " + l);
+      */
+
+      let bBill = mailGenericGetInfo(eTmplts[iTmplt], sBody);
+      NumBills++;
+
+      Logger.log("Чек " + NumBills + " от (" + bBill.date + ") магазин >" + bBill.name + "< на сумму [" + bBill.total + "] р. наличными {" + bBill.cache 
+        + "} ФН :" + bBill.fn + " ФД :" + bBill.fd + " ФП :" + bBill.fp);
 
       // ОФД Такском <noreply@taxcom.ru>
-
       // билайн ОФД <ofdreceipt@beeline.ru>
-
       // Платформа ОФД <noreply@chek.pofd.ru>
 
     } // Письма в цепочке
-    //
-
+    thrd++;
   } // Цепочки писем
+
+  Logger.log("Добавлено " + NumBills + " чеков. Последнее письмо от " + newLastMailDate.toISOString());
 
 }
 
