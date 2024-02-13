@@ -1,6 +1,9 @@
 /*
 
-
+GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
+CutByTemplate - вырезает значение из сообщения по шаблону
+getDateTime - Читает дату из строки и возвращает 
+mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
 
 */
 
@@ -31,84 +34,99 @@ iSum s1
 function GetTemplates(rTemplates)
 {
   // Читаем значения полей шаблона из диапазона
-  const vTmplts = rTemplates.getValues();
+  const v = rTemplates.getValues();
   let Tmplts = [];
 
   for (let i = 0; i < rTemplates.getNumColumns(); i++)
   {
     let j = 0;
-    let Tmplt = {
-      from: vTmplts[j++][i], key: vTmplts[j++][i],
-      name_pt: vTmplts[j++][i], name_s1: vTmplts[j++][i], name_e1: vTmplts[j++][i], name_s2: vTmplts[j++][i], name_e2: vTmplts[j++][i],
-      date_pt: vTmplts[j++][i], date_s1: vTmplts[j++][i], date_e1: vTmplts[j++][i], date_s2: vTmplts[j++][i], date_e2: vTmplts[j++][i],
-      total_pt: vTmplts[j++][i], total_s1: vTmplts[j++][i], total_e1: vTmplts[j++][i], total_s2: vTmplts[j++][i], total_e2: vTmplts[j++][i],
-      cache_pt: vTmplts[j++][i], cache_s1: vTmplts[j++][i], cache_e1: vTmplts[j++][i], cache_s2: vTmplts[j++][i], cache_e2: vTmplts[j++][i],
-      fn_pt: vTmplts[j++][i], fn_s1: vTmplts[j++][i], fn_e1: vTmplts[j++][i], fn_s2: vTmplts[j++][i], fn_e2: vTmplts[j++][i],
-      fd_pt: vTmplts[j++][i], fd_s1: vTmplts[j++][i], fd_e1: vTmplts[j++][i], fd_s2: vTmplts[j++][i], fd_e2: vTmplts[j++][i],
-      fp_pt: vTmplts[j++][i], fp_s1: vTmplts[j++][i], fp_e1: vTmplts[j++][i], fp_s2: vTmplts[j++][i], fp_e2: vTmplts[j++][i]
-    };
-    Tmplts.push(Tmplt);
+    const sFrom = v[j++][i];
+    const sKey = v[j++][i];
+    const tName = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tDate = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tTotal = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tCache = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tFN = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tFD = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tFP = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+
+    //const tIName = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    //const tIQuantity = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    //const tIPrice = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    //const tISum = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+
+    Tmplts.push({
+      from: sFrom,
+      key: sKey,
+      name: tName,
+      date: tDate,
+      total: tTotal,
+      cache: tCache,
+      fn: tFN,
+      fd: tFD,
+      fp: tFP
+
+      // iname: tIName,
+      // iqntty: tIQuantity,
+      // iprice: tIPrice,
+      // isum: tISum
+    });
   }
   Logger.log("Загружено " + Tmplts.length + " шаблонов.");
   return Tmplts;
 }
 
-function FindInTemplates(arrTmplts, mailFrom)
+function CutByTemplate(str, tmplt)
 {
-  for (let i = 0; i < arrTmplts.length; i++)
-    if (arrTmplts[i].from == mailFrom) return i;
-  return -1;
+  switch(tmplt.pt) {
+    case 0: return between(str, tmplt.s1, tmplt.e1).trim();
+    case 1: return between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2).trim();
+    case 2:
+        let s = between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+        return s.slice(s.indexOf(">")+1).trim();
+  }
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  return "";
 }
 
-function CutByTemplate(str, pt, s1, e1, s2, e2)
+function getDateTime(s)
 {
-  switch(pt) {
-    case 0: return between(str, s1, e1).trim();
-    case 1: return between2(str, s1, e1, s2, e2).trim();
-    case 2:
-        let s = between2(str, s1, e1, s2, e2);
-        return s.slice(s.indexOf(">")+1).trim();
-    default:
-        Logger.log("Неизвестный Preprocessing Type " + pt + " ");
-  }
-  return "";
+  const f = "20" + s.slice(6, 8)  // Год
+    + "-" + s.slice(3, 5)         // месяц
+    + "-" + s.slice(0, 2)         // день
+    + "T" + s.slice(9);           // время
+  const d = new Date(f);
+  return d.getTime();
 }
 
 function mailGenericGetInfo(mailTmplt, email)
 {
-  // mailTmplt.name_s1
-  let sName = "";
-  sName = CutByTemplate(email, mailTmplt.name_pt, mailTmplt.name_s1, mailTmplt.name_e1, mailTmplt.name_s2, mailTmplt.name_e2);
-  //sName = between2(email, mailTmplt.name_s1, mailTmplt.name_e1, mailTmplt.name_s2, mailTmplt.name_e2).trim();
-  sName = sName.replace(/&quot;/g, '"');
+  // Вырезаем имя
+  let sName = CutByTemplate(email, mailTmplt.name)
+    .replace(/&quot;/g, '"');
+  // Убираем обрамляющие кавычки
   if (sName.indexOf('"') == 0)
     sName = sName.slice(1, sName.length-1);
 
-  let sDate = "";
-  sDate = CutByTemplate(email, mailTmplt.date_pt, mailTmplt.date_s1, mailTmplt.date_e1, mailTmplt.date_s2, mailTmplt.date_e2);
-  //sDate = between2(email, mailTmplt.date_s1, mailTmplt.date_e1, mailTmplt.date_s2, mailTmplt.date_e2).trim();
-  sDate = sDate.replace("|", "");
+  const sDate = CutByTemplate(email, mailTmplt.date)
+    .replace(" | ", " ")
+    .replace(".202", ".2");
+  const timeDate = getDateTime(sDate);
 
-  let sTotal = "";
-  sTotal = CutByTemplate(email, mailTmplt.total_pt, mailTmplt.total_s1, mailTmplt.total_e1, mailTmplt.total_s2, mailTmplt.total_e2);
-  //sTotal = between2(email, mailTmplt.total_s1, mailTmplt.total_e1, mailTmplt.total_s2, mailTmplt.total_e2).trim();
-  sTotal = sTotal.replace(".", ",");
+  const sTotal = CutByTemplate(email, mailTmplt.total)
+    .replace(".", ",");
 
-  let sCache = "";
-  sCache = CutByTemplate(email, mailTmplt.cache_pt, mailTmplt.cache_s1, mailTmplt.cache_e1, mailTmplt.cache_s2, mailTmplt.cache_e2);
+  let sCache = CutByTemplate(email, mailTmplt.cache);
   if (sCache == "") sCache = 0;
   else sCache = sCache.replace(".", ",");
 
-  let sFN = "";
-  sFN = CutByTemplate(email, mailTmplt.fn_pt, mailTmplt.fn_s1, mailTmplt.fn_e1, mailTmplt.fn_s2, mailTmplt.fn_e2);
+  const sFN = CutByTemplate(email, mailTmplt.fn);
+  const sFD = CutByTemplate(email, mailTmplt.fd);
+  const sFP = CutByTemplate(email, mailTmplt.fp);
 
-  let sFD = "";
-  sFD = CutByTemplate(email, mailTmplt.fd_pt, mailTmplt.fd_s1, mailTmplt.fd_e1, mailTmplt.fd_s2, mailTmplt.fd_e2);
+  let arrItems = [];
 
-  let sFP = "";
-  sFP = CutByTemplate(email, mailTmplt.fp_pt, mailTmplt.fp_s1, mailTmplt.fp_e1, mailTmplt.fp_s2, mailTmplt.fp_e2);
-
-  return {date: sDate, total: sTotal, cache: sCache, name: sName, fn: sFN, fd: sFD, fp: sFP};
+  return {number: 0, dtime: timeDate, sdate: sDate, total: sTotal, cache: sCache, fn: sFN, fd: sFD, fp: sFP, name: sName, items: arrItems};
 }
 
 /*
