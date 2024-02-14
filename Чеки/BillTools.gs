@@ -1,0 +1,87 @@
+/*
+
+billInfo
+billAllInfo
+
+*/
+
+// Возвращает Дату, Сумму и Магазин чека из json строки
+function billInfo(sBill)
+{
+  // Проверка, что это json чека
+  let i = sBill.indexOf("\"totalSum\":");
+  if (i == -1)
+    return undefined;
+
+  // Сумма
+  i += 11;
+  const sSumm = sBill.slice(i, sBill.indexOf(",", i));
+
+  // Дата
+  i = sBill.indexOf("\"dateTime\":")+12;
+  const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
+  const dDate = new Date(sDate);
+
+  // Наличные
+  i = sBill.indexOf("\"cashTotalSum\":")+15;
+  const sCash = sBill.slice(i, sBill.indexOf(",", i));
+
+  // Магазин
+  i = sBill.indexOf("\"user\":\"")+8;
+  const sName = sBill.slice(i, sBill.indexOf("\",", i+1)).replace(/\\\"/g,"\"");
+
+  // ФН
+  i = sBill.indexOf("\"fiscalDriveNumber\":")+21;
+  const sFN = sBill.slice(i, sBill.indexOf("\"", i));
+
+  // ФД
+  i = sBill.indexOf("\"fiscalDocumentNumber\":")+23;
+  const sFD = sBill.slice(i, sBill.indexOf(",", i));
+
+  // ФП
+  i = sBill.indexOf("\"fiscalSign\":")+13;
+  const sFP = sBill.slice(i, sBill.indexOf(",", i));
+
+  return {number: 0, dtime: dDate.getTime(), sdate: sDate, total: sSumm / 100, cache: sCash / 100, fn: sFN, fd: sFD, fp: sFP, name: sName};
+}
+
+// Возвращает информацию о чеке, включая список продуктов.
+function billAllInfo(sBill)
+{
+  let inf = billInfo(sBill);
+  if (inf == undefined) return inf;
+
+  let bItems = [];
+  let iName = "";
+  let iPrice = 0;
+  let iSum = 0;
+  let iQuantity = 0;
+
+  // {"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000}
+
+  let i = sBill.indexOf("\"name\":",sBill.indexOf("\"items\":[")+9);
+  while (i != -1) {
+    i += 8;
+    let j = sBill.indexOf(",\"nds\":", i)-1;
+    iName = sBill.slice(i,j).replace(/\\\"/g,"\"");
+
+    i = sBill.indexOf(",\"price\":", j+8)+9;
+    j = sBill.indexOf(",", i);
+    iPrice = sBill.slice(i, j);
+
+    i = sBill.indexOf(",\"quantity\":", j+1)+12;
+    j = sBill.indexOf(",", i);
+    iQuantity = sBill.slice(i, j);
+
+    i = sBill.indexOf(",\"sum\":", j)+6;
+    j = sBill.indexOf("}", i);
+    iSum = sBill.slice(i, j);
+
+    bItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity, isum: iSum});
+
+    i = sBill.indexOf("\"name\":", j);
+  }
+
+  inf.items = bItems;
+  return inf;
+}
