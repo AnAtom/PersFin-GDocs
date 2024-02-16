@@ -23,7 +23,7 @@ Cache s1...		- то же для суммы наличными
 FN s1...		- то же для ФН
 FD s1...		- то же для ФД
 FP s1...		- то же для ФПД
-Items s1
+Items s				- Строка после которой начинается перечисление товаров
 Item s1
 iName s1
 iQuantity s1
@@ -51,10 +51,12 @@ function GetTemplates(rTemplates)
     const tFD = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tFP = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
 
-    //const tIName = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
-    //const tIQuantity = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
-    //const tIPrice = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
-    //const tISum = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const sItemsFrom = v[j++][i];
+    const sItemFrom = v[j++][i];
+    const tIName = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tIQuantity = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tIPrice = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tISum = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
 
     Tmplts.push({
       from: sFrom,
@@ -65,12 +67,14 @@ function GetTemplates(rTemplates)
       cache: tCache,
       fn: tFN,
       fd: tFD,
-      fp: tFP
+      fp: tFP,
 
-      // iname: tIName,
-      // iqntty: tIQuantity,
-      // iprice: tIPrice,
-      // isum: tISum
+      items: sItemsFrom,
+      item: sItemFrom,
+      iname: tIName,
+      iqntty: tIQuantity,
+      iprice: tIPrice,
+      isum: tISum
     });
   }
   Logger.log("Загружено " + Tmplts.length + " шаблонов.");
@@ -84,6 +88,19 @@ function CutByTemplate(str, tmplt)
     case 1: return between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2).trim();
     case 2:
         let s = between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+        return s.slice(s.indexOf(">")+1).trim();
+  }
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  return "";
+}
+
+function CutFromPosByTemplate(str, pos, tmplt)
+{
+  switch(tmplt.pt) {
+    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1).trim();
+    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2).trim();
+    case 2:
+        let s = between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
         return s.slice(s.indexOf(">")+1).trim();
   }
   Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
@@ -126,7 +143,29 @@ function mailGenericGetInfo(mailTmplt, email)
   const sFP = CutByTemplate(email, mailTmplt.fp);
 
   let arrItems = [];
+  let i = email.indexOf(mailTmplt.items);
+  if (i != -1) {
+    i += mailTmplt.items.length;
 
+    let iName = "";
+    let iQuantity = 0;
+    let iPrice = 0;
+    let iSum = 0;
+    let j = email.indexOf(mailTmplt.item, i);
+    while (j != -1) {
+      iName = CutFromPosByTemplate(email, j, mailTmplt.iname);
+      iQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty).replace(".", ",");
+      let k = iQuantity.indexOf(' ');
+      if (k != -1)
+        iQuantity = iQuantity.slice(0, k);
+      iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice).replace(".", ",");
+      iSum = CutFromPosByTemplate(email, j, mailTmplt.isum).replace(".", ",");
+
+      arrItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity, isum: iSum});
+      i = j + mailTmplt.item.length;
+      j = email.indexOf(mailTmplt.item, i);
+    }
+  }
   return {number: 0, dtime: timeDate, sdate: sDate, total: sTotal, cache: sCache, fn: sFN, fd: sFD, fp: sFP, name: sName, items: arrItems};
 }
 
@@ -161,6 +200,9 @@ function ScanMail(ss, dLastMailDate, arrBills)
 
       const sFrom = message.getFrom();
       const mFrom = between(sFrom, "<", ">");
+      //if (mFrom == "noreply@chek.pofd.ru") {
+        //Logger.log("Новый чек");
+      //}
       const theTmplt = eTmplts.find((element) => element.from == mFrom);
       if (theTmplt == undefined)
       {
@@ -183,13 +225,14 @@ function ScanMail(ss, dLastMailDate, arrBills)
       NumBills++;
 
       Logger.log(
-        "Чек N " + NumBills + 
-        " от (" + bBill.sdate + 
-        ") магазин >" + bBill.name + 
-        "< на сумму [" + bBill.total + "] р. наличными {" + bBill.cache + 
-        "} ФН :" + bBill.fn + 
-        " ФД :" + bBill.fd + 
-        " ФП :" + bBill.fp
+        "Чек N " + NumBills +
+        " от (" + bBill.sdate +
+        ") магазин >" + bBill.name +
+        "< на сумму [" + bBill.total + "] р. наличными {" + bBill.cache +
+        "} ФН :" + bBill.fn +
+        " ФД :" + bBill.fd +
+        " ФП :" + bBill.fp +
+        " товаров :" + bBill.items.length
       );
     } // Письма в цепочке
     thrd++;

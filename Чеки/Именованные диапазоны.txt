@@ -8,7 +8,7 @@
 
 ДатаЧек0		- Дата начала сканирования чеков
 ДатаЧекZ		- Дата окончания сканирования чеков
-ДатаСегодня		- Дата чтобы не сканировать будущие месяцы
+ДатаСегодня		- Дата чтобы не сканировать будущие месяцы =TODAY()
 ДнейРетроЧекДиск - Дней ретроспективы в предыдущем месяце
 
 ДатаЧекДиск		- Дата последнего чека на диске
@@ -20,10 +20,10 @@
 From	noreply@taxcom.ru	ofdreceipt@beeline.ru	noreply@chek.pofd.ru
 Key	taxcom	ofd.beeline	platformaofd
 Name pt	0	2	1
-Name s1	<text>Данный чек подтверждает совершение расчетов в <b>	<table class="body	<!-- Название -->
-Name e1	</b>.</text>	/p>	</span>
-Name s2		<p style=	<b>
-Name e2		<	</b>
+Name start 1	<text>Данный чек подтверждает совершение расчетов в <b>	<table class="body	<!-- Название -->
+Name end 1	</b>.</text>	/p>	</span>
+Name start 2		<p style=	<b>
+Name end 2		<	</b>
 Date pt	1	1	2
 Date s1	<span class="value receipt-value-1012"	Дата | Время	<span>Приход</span>
 Date e1	</td>	</tr>	<!-- /dateTimeString -->
@@ -54,27 +54,25 @@ FP s1	<span class="value receipt-value-1077	ФПД:	>ФПД<
 FP e1	</td>	<br	</table>
 FP s2	>		<span style=
 FP e2	</span>		</span>
-Items s1	<div class="items">	АССОВЫЙ ЧЕК	<!-- Предоплата -->
-Items e1			
-Items s2			
-Items e2			
-Item s1	<div class="item">		<!-- itemName -->
-Item e1			<!-- /itemName -->
-Item s2			<b>
-Item e2			</b>
-iName s1	<span class="value receipt-value-1030		
-iName e1			
-iName s2			
-iName e2			
-iQuantity s1	<span class="value receipt-value-1023		
-			
-			
-			
-iPrice s1	<span class="value receipt-value-1079		
-			
-			
-			
-iSum s1	<span class="value receipt-value-1043		<!-- Общая стоимость позиции -->
-			
-			
-iSum  e2			
+Items	<div class="items">	КАССОВЫЙ ЧЕК	<!-- Предоплата -->
+Item	<div class="item">	<table width="100%" cellpadding="0" cellspacing="0" border="0" style="color: #4a4a4a; font-size: 15px; width: 100%; line-height: 19px;">	<!-- itemName -->
+iName pt	1	2	0
+iName s1	<span class="value receipt-value-1030	<span style=	<b>
+iName e1	</span>	</table>	</b>
+iName s2	>	<span style=	
+iName e2	; <	</span>	
+iQuantity pt	0	2	1
+iQuantity s1	<span class="value receipt-value-1023">	Цена*Кол	<!-- Цена -->
+iQuantity e1	</span>	</tr>	</b>
+iQuantity s2		<td align=	<span>
+iQuantity e2		</td>	</span>
+iPrice pt	0	2	2
+iPrice s1	<span class="value receipt-value-1079">	Цена*Кол	<!-- Цена -->
+iPrice e1	</span>	<td align=	</b>
+iPrice s2		<td width=	 x 
+iPrice e2		</td>	</span>
+iSum pt	1	2	2
+iSum s1	<span class="value receipt-value-1043	Сумма	Общая стоимость позиции с учетом скидок и наценок
+iSum e1	/span>	</tr>	</tr>
+iSum s2	>	<td 	<span style=
+iSum  e2	<	</td>	</span>

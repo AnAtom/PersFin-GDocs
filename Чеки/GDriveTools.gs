@@ -44,16 +44,13 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
   Logger.log("Читаем чеки на диске из папки: " + folderBills.getName() + " Id: " + folderId);
   const bFolders = folderBills.getFolders();
 
+  const dToday = ss.getRangeByName('ДатаСегодня').getValue();
+  const monthToday = dToday.getMonth();
   let monthPrev = dLastDriveDate.getMonth();
-  const daysPrevMonth = ss.getRangeByName('ДнейРетроЧекДиск').getValue();
-  if (daysPrevMonth > 0) {
+  if (dLastDriveDate.getDate() < ss.getRangeByName('ДнейРетроЧекДиск').getValue()) {
     monthPrev--;
     if (monthPrev < 0) monthPrev = 0;
   }
-
-  const monthToday = ss.getRangeByName('ДатаСегодня').getValue().getMonth();
-  let monthBefore = monthToday - 1;
-  if (monthBefore < 0) monthBefore = 0;
 
   let newLastDriveDate = dLastDriveDate;
   let NumBills = 0;
@@ -81,10 +78,20 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
       let sBill = fBill.getBlob().getDataAsString();
       if (sBill == undefined) continue;
 
-      let bBill = billInfo(sBill);
+      let bBill = billAllInfo(sBill);
       arrBills.push(bBill);
       NumBills++;
 
+      Logger.log(
+        "Чек N " + NumBills +
+        " от (" + bBill.sdate +
+        ") магазин >" + bBill.name +
+        "< на сумму [" + bBill.total + "] р. наличными {" + bBill.cache +
+        "} ФН :" + bBill.fn +
+        " ФД :" + bBill.fd +
+        " ФП :" + bBill.fp +
+        " товаров :" + bBill.items.length
+      );
     } // цикл файлов в папке
   } // цикл вложенных папок по месяцам
 

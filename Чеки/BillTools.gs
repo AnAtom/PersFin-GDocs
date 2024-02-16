@@ -59,7 +59,8 @@ function billAllInfo(sBill)
 
   // {"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000}
 
-  let i = sBill.indexOf("\"name\":",sBill.indexOf("\"items\":[")+9);
+  let i = sBill.indexOf("\"items\":[")+9;
+  i = sBill.indexOf("\"name\":", i);
   while (i != -1) {
     i += 8;
     let j = sBill.indexOf(",\"nds\":", i)-1;
@@ -71,13 +72,13 @@ function billAllInfo(sBill)
 
     i = sBill.indexOf(",\"quantity\":", j+1)+12;
     j = sBill.indexOf(",", i);
-    iQuantity = sBill.slice(i, j);
+    iQuantity = sBill.slice(i, j).replace(".", ",");
 
-    i = sBill.indexOf(",\"sum\":", j)+6;
-    j = sBill.indexOf("}", i);
+    i = sBill.indexOf(",\"sum\":", j)+7;
+    j = Math.min(sBill.indexOf("}", i), sBill.indexOf(",", i));
     iSum = sBill.slice(i, j);
 
-    bItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity, isum: iSum});
+    bItems.push({iname: iName, iprice: iPrice / 100, iquantity: iQuantity, isum: iSum / 100});
 
     i = sBill.indexOf("\"name\":", j);
   }
