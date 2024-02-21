@@ -79,6 +79,7 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
       if (sBill == undefined) continue;
 
       let bBill = billAllInfo(sBill);
+      bBill.id = fBill.getUrl();
       arrBills.push(bBill);
       NumBills++;
 

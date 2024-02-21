@@ -144,29 +144,37 @@ function mailGenericGetInfo(mailTmplt, email)
 
   let arrItems = [];
   let i = email.indexOf(mailTmplt.items);
-  if (i != -1) {
+  if (~i) {
     i += mailTmplt.items.length;
 
+    let n = 1;
     let iName = "";
+    let sQuantity = "";
     let iQuantity = 0;
     let iPrice = 0;
     let iSum = 0;
     let j = email.indexOf(mailTmplt.item, i);
-    while (j != -1) {
+    while (~j) {
       iName = CutFromPosByTemplate(email, j, mailTmplt.iname);
-      iQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty).replace(".", ",");
-      let k = iQuantity.indexOf(' ');
-      if (k != -1)
-        iQuantity = iQuantity.slice(0, k);
-      iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice).replace(".", ",");
-      iSum = CutFromPosByTemplate(email, j, mailTmplt.isum).replace(".", ",");
+      // Отрезаем нумерацию позиций NN:
+      let k = iName.indexOf(':');
+      if (~k && iName.slice(0, k) == n++)
+        iName = iName.slice(k+1).trim();
+      sQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty); // .replace(".", ",")
+      // Отрезаем единицы измерения (шт.)
+      k = sQuantity.indexOf(' ');
+      if (~k)
+        sQuantity = sQuantity.slice(0, k);
+      iQuantity = sQuantity / 1.0;
+      iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice) / 1.0; // .replace(".", ",")
+      iSum = CutFromPosByTemplate(email, j, mailTmplt.isum) / 1.0; // .replace(".", ",")
 
-      arrItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity, isum: iSum});
+      arrItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity / 1.0, isum: iSum});
       i = j + mailTmplt.item.length;
       j = email.indexOf(mailTmplt.item, i);
     }
   }
-  return {number: 0, dtime: timeDate, sdate: sDate, total: sTotal, cache: sCache, fn: sFN, fd: sFD, fp: sFP, name: sName, items: arrItems};
+  return {number: 0, dtime: timeDate, sdate: sDate, total: sTotal, cache: sCache, fn: sFN, fd: sFD, fp: sFP, name: sName, items: filterUnqGoods(arrItems)};
 }
 
 function ScanMail(ss, dLastMailDate, arrBills)
@@ -221,6 +229,7 @@ function ScanMail(ss, dLastMailDate, arrBills)
         Logger.log("Ошибка чтения чека из письма.", err);
         continue;
       }
+      bBill.id = message.getId();
       arrBills.push(bBill);
       NumBills++;
 

@@ -1,7 +1,8 @@
 /*
 
-billInfo
-billAllInfo
+billInfo(sBill)
+billAllInfo(sBill)
+filterUnqGoods(arrGoods)
 
 */
 
@@ -61,10 +62,10 @@ function billAllInfo(sBill)
 
   let i = sBill.indexOf("\"items\":[")+9;
   i = sBill.indexOf("\"name\":", i);
-  while (i != -1) {
+  while (~i) {
     i += 8;
     let j = sBill.indexOf(",\"nds\":", i)-1;
-    iName = sBill.slice(i,j).replace(/\\\"/g,"\"");
+    iName = sBill.slice(i,j).replace(/\\\"/g,"\"").trim();
 
     i = sBill.indexOf(",\"price\":", j+8)+9;
     j = sBill.indexOf(",", i);
@@ -72,7 +73,7 @@ function billAllInfo(sBill)
 
     i = sBill.indexOf(",\"quantity\":", j+1)+12;
     j = sBill.indexOf(",", i);
-    iQuantity = sBill.slice(i, j).replace(".", ",");
+    iQuantity = sBill.slice(i, j) / 1.0; // .replace(".", ",")
 
     i = sBill.indexOf(",\"sum\":", j)+7;
     j = Math.min(sBill.indexOf("}", i), sBill.indexOf(",", i));
@@ -83,6 +84,21 @@ function billAllInfo(sBill)
     i = sBill.indexOf("\"name\":", j);
   }
 
-  inf.items = bItems;
+  inf.items = filterUnqGoods(bItems);
   return inf;
+}
+
+function filterUnqGoods(arrGoods)
+{
+  let newGoods = [];
+  for (itm of arrGoods) {
+    let i = newGoods.findIndex((element) => element.iprice == itm.iprice && element.iname == itm.iname);
+    if (~i)
+      newGoods[i].iquantity += itm.iquantity;
+    else newGoods.push(itm);
+  }
+  if (newGoods.length == arrGoods.length)
+    return arrGoods;
+  else
+    return newGoods;
 }
