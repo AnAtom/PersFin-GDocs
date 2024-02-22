@@ -131,12 +131,11 @@ function mailGenericGetInfo(mailTmplt, email)
     .replace(".202", ".2");
   const timeDate = getDateTime(sDate);
 
-  const sTotal = CutByTemplate(email, mailTmplt.total)
-    .replace(".", ",");
+  const sTotal = CutByTemplate(email, mailTmplt.total) / 1.0;
 
   let sCache = CutByTemplate(email, mailTmplt.cache);
-  if (sCache == "") sCache = 0;
-  else sCache = sCache.replace(".", ",");
+  if (sCache == "") sCache = 0.0;
+  else sCache = sCache / 1.0;
 
   const sFN = CutByTemplate(email, mailTmplt.fn);
   const sFD = CutByTemplate(email, mailTmplt.fd);
@@ -160,14 +159,14 @@ function mailGenericGetInfo(mailTmplt, email)
       let k = iName.indexOf(':');
       if (~k && iName.slice(0, k) == n++)
         iName = iName.slice(k+1).trim();
-      sQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty); // .replace(".", ",")
+      sQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty);
       // Отрезаем единицы измерения (шт.)
       k = sQuantity.indexOf(' ');
       if (~k)
         sQuantity = sQuantity.slice(0, k);
       iQuantity = sQuantity / 1.0;
-      iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice) / 1.0; // .replace(".", ",")
-      iSum = CutFromPosByTemplate(email, j, mailTmplt.isum) / 1.0; // .replace(".", ",")
+      iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice) / 1.0;
+      iSum = CutFromPosByTemplate(email, j, mailTmplt.isum) / 1.0;
 
       arrItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity / 1.0, isum: iSum});
       i = j + mailTmplt.item.length;

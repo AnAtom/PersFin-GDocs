@@ -93,9 +93,11 @@ function filterUnqGoods(arrGoods)
   let newGoods = [];
   for (itm of arrGoods) {
     let i = newGoods.findIndex((element) => element.iprice == itm.iprice && element.iname == itm.iname);
-    if (~i)
+    if (~i) {
       newGoods[i].iquantity += itm.iquantity;
-    else newGoods.push(itm);
+      newGoods[i].isum += itm.isum;
+    } else
+      newGoods.push(itm);
   }
   if (newGoods.length == arrGoods.length)
     return arrGoods;
