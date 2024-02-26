@@ -98,11 +98,14 @@ function onOnceAnHour()
   let oldRows = []; // Массив старых записей на листе Товары, которые могут быть изменены
   let lastRow = sGoods.getLastRow();
   if (lastRow > 2)
-    oldRows = sGoods.getRange(4, 2, lastRow, 4).getValues();
+    oldRows = sGoods.getRange(4, 1, lastRow-3, 4).getValues();
     // 0:Название	1:Цена	2:Количество	3:Сумма
   // Заполняем список новых товаров для вставки, фиксируем изменения в повторяющихся товарах
   for (bill of newBills) {
     for (product of bill.items) {
+      // Отрезаем всякие акционные метки
+      let pdctName = product.iname
+        .replace(/^\<А\> /, '');
       // Предварительно фильтруем повторяющиеся товары
       if (fFitrUnqGoods) {
         // В списке старых товаров
@@ -128,7 +131,7 @@ function onOnceAnHour()
   // Обновляем данные по дублированным товарам
   if (chngdRows.length > 0)
     for (chngdRow of chngdRows)
-      sGoods.getRange(4 + chngdRow, 3, 1, 2).setValues([oldRows[chngdRow][2], oldRows[chngdRow][3]]);
+      sGoods.getRange(4 + chngdRow, 3, 1, 2).setValues([[oldRows[chngdRow][2], oldRows[chngdRow][3]]]);
   // Вставляем новые товары
   let newLength = newRows.length;
   if (newLength > 0) {
@@ -142,10 +145,10 @@ function onOnceAnHour()
   if (fSortGoods) {
     Logger.log('Сортируем товары на листе.');
     lastRow = sGoods.getLastRow();
-    oldRows = sGoods.getRange(4, 2, lastRow, 7).getValues();
+    oldRows = sGoods.getRange(4, 1, lastRow-3, 7).getValues();
     // 0:Название	1:Цена	2:Количество	3:Сумма	4: Чек	5: Единицы	6: Проверка
-    oldRows.sort((a, b) => a.iquantity - b.iquantity);
-    sGoods.getRange(4, 2, lastRow, 7).setValues(oldRows);
+    oldRows.sort((a, b) => a[0].localeCompare(b[0]));
+    sGoods.getRange(4, 1, lastRow-3, 7).setValues(oldRows);
   }
 
   Logger.log('>>> Обнавляем информацию по магазинам.');
@@ -155,14 +158,14 @@ function onOnceAnHour()
   oldRows = []; // Массив старых записей на листе Магазины, которые могут быть изменены
   lastRow = sStores.getLastRow();
   if (lastRow > 2)
-    oldRows = sStores.getRange(4, 4, lastRow, 3).getValues();
+    oldRows = sStores.getRange(4, 4, lastRow-3, 3).getValues();
     // 0:Статья	1:Инфо	2:Примечание	3:Название	4:Чеков
   // Заполняем список новых магазинов для вставки, фиксируем изменения в повторяющихся магазинах
   for (bill of newBills) {
     const sStore = bill.name;
     // В списке старых магазинов
     let r = oldRows.findIndex((element) => element[0] == sStore);
-    if (~r) { // Увеличиваем количество чеков для этого магазина
+    if (~r) { // Увеличиваем количество чеков и обновляем общую сумму для этого магазина
       oldRows[r][1] += 1;
       oldRows[r][2] += bill.total;
       chngdRows.push(r); // Запоминаем индекс для обновления в таблице
@@ -182,7 +185,7 @@ function onOnceAnHour()
   Logger.log('--- Сохраняем магазины. Новых : ' + newRows.length + ' Изменено старых : ' + chngdRows.length);
   if (chngdRows.length > 0)
     for (chngdRow of chngdRows)
-      sStores.getRange(4 + chngdRow, 5, 1, 2).setValues([oldRows[chngdRow][1], oldRows[chngdRow][2]]);
+      sStores.getRange(4 + chngdRow, 5, 1, 2).setValues([[oldRows[chngdRow][1], oldRows[chngdRow][2]]]);
   // Вставляем новые магазины
   newLength = newRows.length;
   if (newLength > 0) {
