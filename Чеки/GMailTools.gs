@@ -97,24 +97,23 @@ function CutByTemplate(str, tmplt)
 function CutFromPosByTemplate(str, pos, tmplt)
 {
   switch(tmplt.pt) {
-    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1).trim();
-    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2).trim();
+    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1);
+    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
     case 2:
         let s = between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-        return s.slice(s.indexOf(">")+1).trim();
+        return s.slice(s.indexOf(">")+1);
   }
   Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
   return "";
 }
 
-function getDateTime(s)
+function getDate(s)
 {
-  const f = "20" + s.slice(6, 8)  // Год
+  const d = "20" + s.slice(6, 8)  // Год
     + "-" + s.slice(3, 5)         // месяц
     + "-" + s.slice(0, 2)         // день
     + "T" + s.slice(9);           // время
-  const d = new Date(f);
-  return d.getTime();
+  return new Date(d);
 }
 
 function mailGenericGetInfo(mailTmplt, email)
@@ -129,13 +128,13 @@ function mailGenericGetInfo(mailTmplt, email)
   const sDate = CutByTemplate(email, mailTmplt.date)
     .replace(" | ", " ")
     .replace(".202", ".2");
-  const timeDate = getDateTime(sDate);
+  const dDate = getDate(sDate);
 
-  const sTotal = CutByTemplate(email, mailTmplt.total) / 1.0;
+  const sSumm = CutByTemplate(email, mailTmplt.total) / 1.0;
 
-  let sCache = CutByTemplate(email, mailTmplt.cache);
-  if (sCache == "") sCache = 0.0;
-  else sCache = sCache / 1.0;
+  let sCach = CutByTemplate(email, mailTmplt.cache);
+  if (sCach == "") sCach = 0.0;
+  else sCach = sCach / 1.0;
 
   const sFN = CutByTemplate(email, mailTmplt.fn);
   const sFD = CutByTemplate(email, mailTmplt.fd);
@@ -149,37 +148,45 @@ function mailGenericGetInfo(mailTmplt, email)
     let n = 1;
     let iName = "";
     let sQuantity = "";
+    let iUnit = "";
     let iQuantity = 0;
     let iPrice = 0;
     let iSum = 0;
     let j = email.indexOf(mailTmplt.item, i);
     while (~j) {
-      iName = CutFromPosByTemplate(email, j, mailTmplt.iname);
+      iName = CutFromPosByTemplate(email, j, mailTmplt.iname).trim();
       // Отрезаем нумерацию позиций NN:
       let k = iName.indexOf(':');
       if (~k && iName.slice(0, k) == n++)
         iName = iName.slice(k+1).trim();
-      sQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty);
+
+      sQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty).trim();
       // Отрезаем единицы измерения (шт.)
       k = sQuantity.indexOf(' ');
-      if (~k)
+      if (~k) {
+        iUnit = sQuantity.slice(k+1);
         sQuantity = sQuantity.slice(0, k);
+      } else
+        iUnit = "";
       iQuantity = sQuantity / 1.0;
       iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice) / 1.0;
       iSum = CutFromPosByTemplate(email, j, mailTmplt.isum) / 1.0;
 
-      arrItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity / 1.0, isum: iSum});
+      arrItems.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
       i = j + mailTmplt.item.length;
       j = email.indexOf(mailTmplt.item, i);
     }
   }
-  return {number: 0, dtime: timeDate, sdate: sDate, total: sTotal, cache: sCache, fn: sFN, fd: sFD, fp: sFP, name: sName, items: filterUnqGoods(arrItems)};
+  const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
+                  items: arrItems, totalSum: sSumm, user: sName}
+
+  return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
 }
 
 function ScanMail(ss, dLastMailDate, arrBills)
 {
-  const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
-  const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
+  // const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
+  // const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
 
   let newLastMailDate = dLastMailDate;
   let NumBills = 0;
@@ -195,7 +202,12 @@ function ScanMail(ss, dLastMailDate, arrBills)
   // Сканируем цепочки писем
   const mailThreads = GmailApp.getUserLabelByName(sLabel).getThreads();
   let thrd = 1;
+  let mURL = "";
   for (messages of mailThreads) {
+    if (messages.getLastMessageDate() > dLastMailDate)
+      mURL = messages.getPermalink();
+    else
+      continue;
     let m = 0;
     for (message of messages.getMessages()) {
       const dDate = message.getDate();
@@ -205,19 +217,19 @@ function ScanMail(ss, dLastMailDate, arrBills)
       } else
         continue;
 
+      const sBody = message.getBody();
       const sFrom = message.getFrom();
       const mFrom = between(sFrom, "<", ">");
-      //if (mFrom == "noreply@chek.pofd.ru") {
-        //Logger.log("Новый чек");
-      //}
+      /* if (mFrom == "noreply@chek.pofd.ru") {
+        Logger.log("Новый чек");
+      } */
       const theTmplt = eTmplts.find((element) => element.from == mFrom);
       if (theTmplt == undefined)
       {
-        Logger.log("Неизвестный источник чека :" + sFrom + " Пропускаем письмо от " + dDate.toISOString());
+        Logger.log(">>> !!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо [" + sBody.length + "] от " + dDate.toISOString() + " >>> ");
+        // ss.getSheetByName('DBG').getRange(1, 1).setValue(sBody);
         continue;
       }
-
-      const sBody = message.getBody();
 
       Logger.log( dDate.toISOString() + " e-Mail " + thrd + "#" + ++m + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + sFrom + " ." );
       //let doc = XmlService.parse(between(sBody, '<body>', '</body>'));
@@ -225,23 +237,13 @@ function ScanMail(ss, dLastMailDate, arrBills)
       try {
         bBill = mailGenericGetInfo(theTmplt, sBody);
       } catch (err) {
-        Logger.log("Ошибка чтения чека из письма.", err);
+        Logger.log(">>> !!! Ошибка чтения чека из письма.", err);
         continue;
       }
-      bBill.id = message.getId();
-      arrBills.push(bBill);
-      NumBills++;
+      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
 
-      Logger.log(
-        "Чек N " + NumBills +
-        " от (" + bBill.sdate +
-        ") магазин >" + bBill.name +
-        "< на сумму [" + bBill.total + "] р. наличными {" + bBill.cache +
-        "} ФН :" + bBill.fn +
-        " ФД :" + bBill.fd +
-        " ФП :" + bBill.fp +
-        " товаров :" + bBill.items.length
-      );
+      bBill.URL = mURL;
+      arrBills.push(bBill);
     } // Письма в цепочке
     thrd++;
   } // Цепочки писем

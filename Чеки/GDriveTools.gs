@@ -25,8 +25,9 @@ function MonthNum(sMonth)
 
 function ScanDrive(ss, dLastDriveDate, arrBills)
 {
-  const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
-  const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
+  // const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
+  // const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
+  const fFileMonth = ss.getSheetByName('ФлагЧекиПоМесяцам').getValue();
 
   // Читаем папку, в которой собраны чеки, из ячейки ЧекиДиск
   const folderId = Sheets.Spreadsheets.get(
@@ -54,7 +55,6 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
 
   let newLastDriveDate = dLastDriveDate;
   let NumBills = 0;
-  let bBill = {};
 
   // Сканируем вложенные папки
   while (bFolders.hasNext()) {
@@ -79,20 +79,10 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
       if (sBill == undefined) continue;
 
       let bBill = billAllInfo(sBill);
-      bBill.id = fBill.getUrl();
-      arrBills.push(bBill);
-      NumBills++;
+      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
 
-      Logger.log(
-        "Чек N " + NumBills +
-        " от (" + bBill.sdate +
-        ") магазин >" + bBill.name +
-        "< на сумму [" + bBill.total + "] р. наличными {" + bBill.cache +
-        "} ФН :" + bBill.fn +
-        " ФД :" + bBill.fd +
-        " ФП :" + bBill.fp +
-        " товаров :" + bBill.items.length
-      );
+      bBill.URL = fBill.getUrl();
+      arrBills.push(bBill);
     } // цикл файлов в папке
   } // цикл вложенных папок по месяцам
 

@@ -1,10 +1,29 @@
 /*
 
+billFormatText(sBill)
 billInfo(sBill)
 billAllInfo(sBill)
 filterUnqGoods(arrGoods)
+cutPromoTagFromGoods(arrGoods)
+billInfoStr(pBill)
 
 */
+
+// Разбивает строку JSON на несколько строк для читаемости. Удаляем '[{"_id": ... "ticket":{"document":{"receipt":', '}}}]'
+function billFormatText(sBill)
+{
+  return sBill.slice(sBill.indexOf("receipt\":{")+9, -4)
+  .replace(/,\"dateTime/, ",\n\"dateTime")
+  .replace(/\"fiscalDocumentNumber/, "\n\"fiscalDocumentNumber")
+  .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
+  .replace(/\"fiscalSign/, "\n\"fiscalSign")
+  .replace(/,\"items/, ",\n\"items")
+  .replace(/\[{\"name/, "[\n{\"name")
+  .replace(/,{\"name/g, ",\n{\"name")
+  .replace(/}],\"kktRegId/, "}\n],\"kktRegId")
+  .replace(/,\"totalSum/, ",\n\"totalSum")
+  .replace(/,\"user\"/, ",\n\"user\"");
+}
 
 // Возвращает Дату, Сумму и Магазин чека из json строки
 function billInfo(sBill)
@@ -43,7 +62,10 @@ function billInfo(sBill)
   i = sBill.indexOf("\"fiscalSign\":")+13;
   const sFP = sBill.slice(i, sBill.indexOf(",", i));
 
-  return {number: 0, dtime: dDate.getTime(), sdate: sDate, total: sSumm / 100, cache: sCash / 100, fn: sFN, fd: sFD, fp: sFP, name: sName};
+  const jBill = {cashTotalSum: sCash / 100.0, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
+                  items: [], totalSum: sSumm / 100.0, user: sName}
+
+  return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
 }
 
 // Возвращает информацию о чеке, включая список продуктов.
@@ -52,13 +74,13 @@ function billAllInfo(sBill)
   let inf = billInfo(sBill);
   if (inf == undefined) return inf;
 
-  let bItems = [];
+  // {"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000,"unit":"liter"}
+
   let iName = "";
   let iPrice = 0;
   let iSum = 0;
   let iQuantity = 0;
-
-  // {"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000}
+  let iUnit = "";
 
   let i = sBill.indexOf("\"items\":[")+9;
   i = sBill.indexOf("\"name\":", i);
@@ -73,34 +95,67 @@ function billAllInfo(sBill)
 
     i = sBill.indexOf(",\"quantity\":", j+1)+12;
     j = sBill.indexOf(",", i);
-    iQuantity = sBill.slice(i, j) / 1.0; // .replace(".", ",")
+    iQuantity = sBill.slice(i, j) / 1.0;
 
     i = sBill.indexOf(",\"sum\":", j)+7;
-    j = Math.min(sBill.indexOf("}", i), sBill.indexOf(",", i));
-    iSum = sBill.slice(i, j);
+    j = sBill.indexOf("}", i);
+    let m = sBill.indexOf(",", i);
+    if (j > m) {
+      i = sBill.indexOf("unit\":", m)+7;
+      j = sBill.indexOf("}", i)-1;
+      iUnit = sBill.slice(i, j);
+    } else {
+      iSum = sBill.slice(i, j);
+      iUnit = "";
+    }
 
-    bItems.push({iname: iName, iprice: iPrice / 100, iquantity: iQuantity, isum: iSum / 100});
+    inf.jsonBill.items.push({name: iName, price: iPrice / 100, quantity: iQuantity / 1.0, sum: iSum / 100, unit: iUnit});
 
     i = sBill.indexOf("\"name\":", j);
   }
 
-  inf.items = filterUnqGoods(bItems);
   return inf;
+}
+
+// Отрезаем артикулы и акционные метки в начале названия товара: 0000, *, <A>, [M], [M+]
+function cutPromoTagFromGoods(arrGoods)
+{
+  for (itm of arrGoods)
+    itm.name = itm.name
+      .replace(/^\<А\> /, '')
+      .replace(/^\[М\+?\] /, '')
+      .replace(/^[0-9]+ /, '')
+      .replace(/^\*/, '');
+  return arrGoods;
 }
 
 function filterUnqGoods(arrGoods)
 {
   let newGoods = [];
   for (itm of arrGoods) {
-    let i = newGoods.findIndex((element) => element.iprice == itm.iprice && element.iname == itm.iname);
-    if (~i) {
-      newGoods[i].iquantity += itm.iquantity;
-      newGoods[i].isum += itm.isum;
-    } else
+    let item = newGoods.find((element) => element.price == itm.price && element.name == itm.name);
+    if (item == undefined)
       newGoods.push(itm);
+    else {
+      item.quantity += itm.quantity;
+      item.sum += itm.sum;
+    }
   }
   if (newGoods.length == arrGoods.length)
     return arrGoods;
   else
     return newGoods;
+}
+
+function billInfoStr(bBill)
+{
+  const s =
+    " от (" + bBill.jsonBill.dateTime.toISOString() +
+    ") магазин >" + bBill.jsonBill.user +
+    "< на сумму [" + bBill.jsonBill.totalSum + "] р. наличными {" + bBill.jsonBill.cashTotalSum +
+    "} ФН :" + bBill.jsonBill.fiscalDriveNumber +
+    " ФД :" + bBill.jsonBill.fiscalDocumentNumber +
+    " ФП :" + bBill.jsonBill.fiscalSign +
+    " товаров :" + bBill.jsonBill.items.length;
+  return s
 }
