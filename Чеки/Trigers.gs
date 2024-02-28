@@ -95,12 +95,7 @@ function onOnceAnHour()
       }
       bill.SN = ++n;
       if (fSaveJSON)
-        bJSON = JSON.stringify(bill.jsonBill) 
-          .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
-          .replace(/,\"items/, ",\n\"items")
-          .replace(/\[{\"name/, "[\n{\"name")
-          .replace(/,{\"name/g, ",\n{\"name")
-          .replace(/,\"totalSum/, ",\n\"totalSum");
+        bJSON = billFormatShort(bill.jsonBill);
       else
         bJSON = "";
       newRow = [bill.SN, bill.jsonBill.dateTime, bill.jsonBill.totalSum, bill.jsonBill.cashTotalSum, 
@@ -116,12 +111,7 @@ function onOnceAnHour()
     for (bill of newBills) {
       bill.SN = ++n;
       if (fSaveJSON)
-        bJSON = JSON.stringify(bill.jsonBill)  
-          .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
-          .replace(/,\"items/, ",\n\"items")
-          .replace(/\[{\"name/, "[\n{\"name")
-          .replace(/,{\"name/g, ",\n{\"name")
-          .replace(/,\"totalSum/, ",\n\"totalSum");
+        bJSON = billFormatShort(bill.jsonBill);
       else
         bJSON = "";
       newRow = [bill.SN, bill.jsonBill.dateTime, bill.jsonBill.totalSum, bill.jsonBill.cashTotalSum, 

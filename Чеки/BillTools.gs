@@ -1,5 +1,6 @@
 /*
 
+billFormatShort(jBill)
 billFormatText(sBill)
 billInfo(sBill)
 billAllInfo(sBill)
@@ -9,20 +10,30 @@ billInfoStr(pBill)
 
 */
 
+function billFormatShort(jBill)
+{
+  return JSON.stringify(jBill)
+    .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
+    .replace(/,\"items/, ",\n\"items")
+    .replace(/\[{\"name/, "[\n\t{\"name")
+    .replace(/,{\"name/g, ",\n\t{\"name")
+    .replace(/,\"totalSum/, ",\n\"totalSum");
+}
+
 // Разбивает строку JSON на несколько строк для читаемости. Удаляем '[{"_id": ... "ticket":{"document":{"receipt":', '}}}]'
 function billFormatText(sBill)
 {
   return sBill.slice(sBill.indexOf("receipt\":{")+9, -4)
-  .replace(/,\"dateTime/, ",\n\"dateTime")
-  .replace(/\"fiscalDocumentNumber/, "\n\"fiscalDocumentNumber")
-  .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
-  .replace(/\"fiscalSign/, "\n\"fiscalSign")
-  .replace(/,\"items/, ",\n\"items")
-  .replace(/\[{\"name/, "[\n{\"name")
-  .replace(/,{\"name/g, ",\n{\"name")
-  .replace(/}],\"kktRegId/, "}\n],\"kktRegId")
-  .replace(/,\"totalSum/, ",\n\"totalSum")
-  .replace(/,\"user\"/, ",\n\"user\"");
+    .replace(/,\"dateTime/, ",\n\"dateTime")
+    .replace(/\"fiscalDocumentNumber/, "\n\"fiscalDocumentNumber")
+    .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
+    .replace(/\"fiscalSign/, "\n\"fiscalSign")
+    .replace(/,\"items/, ",\n\"items")
+    .replace(/\[{\"name/, "[\n\t{\"name")
+    .replace(/,{\"name/g, ",\n\t{\"name")
+    .replace(/}],\"kktRegId/, "}\n],\"kktRegId")
+    .replace(/,\"totalSum/, ",\n\"totalSum")
+    .replace(/,\"user\"/, ",\n\"user\"");
 }
 
 // Возвращает Дату, Сумму и Магазин чека из json строки

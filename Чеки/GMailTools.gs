@@ -231,7 +231,7 @@ function ScanMail(ss, dLastMailDate, arrBills)
         continue;
       }
 
-      Logger.log( dDate.toISOString() + " e-Mail " + thrd + "#" + ++m + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + sFrom + " ." );
+      Logger.log( "Письмо " + thrd + "#" + ++m + " от " + dDate.toISOString() + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + sFrom + " ." );
       //let doc = XmlService.parse(between(sBody, '<body>', '</body>'));
 
       try {

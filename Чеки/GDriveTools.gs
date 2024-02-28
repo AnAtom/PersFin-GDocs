@@ -27,7 +27,7 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
 {
   // const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
   // const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
-  const fFileMonth = ss.getSheetByName('ФлагЧекиПоМесяцам').getValue();
+  const fFileMonth = ss.getRangeByName('ФлагЧекиПоМесяцам').getValue();
 
   // Читаем папку, в которой собраны чеки, из ячейки ЧекиДиск
   const folderId = Sheets.Spreadsheets.get(
@@ -62,13 +62,15 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
     const nMonth = bFolder.getName().slice(3);
     const iMonth = MonthNum(nMonth);
     // Пропускаем будушие месяцы и месяцы предшествующие предпоследнему обработанному
-    if (iMonth > monthToday || iMonth < monthPrev) continue;
+    if (iMonth > monthToday || iMonth < monthPrev)
+      continue;
     
     Logger.log("Папка " + nMonth);
 
-    let bFiles = bFolder.getFiles();
-    while (bFiles.hasNext()) {
-      let fBill = bFiles.next();
+    let newBillsStr = "";
+    let aFiles = bFolder.getFiles();
+    while (aFiles.hasNext()) {
+      let fBill = aFiles.next();
       let bFileDate = fBill.getDateCreated();
       if (bFileDate > dLastDriveDate) {
         if (bFileDate > newLastDriveDate)
@@ -79,11 +81,30 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
       if (sBill == undefined) continue;
 
       let bBill = billAllInfo(sBill);
-      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
-
       bBill.URL = fBill.getUrl();
       arrBills.push(bBill);
+      newBillsStr += billFormatText(sBill) + "\n\n";
+      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
     } // цикл файлов в папке
+    if (newBillsStr == "")
+      continue;
+
+    // Записываем новые чеки в файл
+    let fMonthName = "Чеки " + nMonth + ".txt";
+    aFiles = folderBills.getFilesByName(fMonthName);
+    if (aFiles.hasNext()) {
+      let fMonth = aFiles.next();
+      Logger.log("Обновляем файл " + fMonthName);
+      let sMonth = fMonth.getBlob().getDataAsString();
+      if (sMonth == undefined) sMonth = "";
+      fMonth.setContent(newBillsStr + sMonth);
+    }
+    else
+    {
+      Logger.log("Создаем файл " + fMonthName);
+      folderBills.createFile(fMonthName, newBillsStr);
+    }
+
   } // цикл вложенных папок по месяцам
 
   Logger.log("Считано " + NumBills + " новых чеков. Последний файл от " + newLastDriveDate.toISOString());
