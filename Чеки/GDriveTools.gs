@@ -83,9 +83,10 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
       let bBill = billAllInfo(sBill);
       bBill.URL = fBill.getUrl();
       arrBills.push(bBill);
-      newBillsStr += billFormatText(sBill) + "\n\n";
+      if (fFileMonth) newBillsStr += billFormatText(sBill) + "\n\n";
       Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
     } // цикл файлов в папке
+
     if (newBillsStr == "")
       continue;
 

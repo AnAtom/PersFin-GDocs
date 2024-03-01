@@ -59,7 +59,10 @@ function billInfo(sBill)
 
   // Магазин
   i = sBill.indexOf("\"user\":\"")+8;
-  const sName = sBill.slice(i, sBill.indexOf("\",", i+1)).replace(/\\\"/g,"\"");
+  const sName = sBill.slice(i, sBill.indexOf("\",", i+1))
+    .replace("АКЦИОНЕРНОЕ ОБЩЕСТВО", "АО")
+    .replace("ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ", "ООО")
+    .replace(/\\\"/g,"\"");
 
   // ФН
   i = sBill.indexOf("\"fiscalDriveNumber\":")+21;

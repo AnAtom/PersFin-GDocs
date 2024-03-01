@@ -181,7 +181,7 @@ function onOnceAnHour()
   // Обновляем данные по дублированным товарам
   if (chngdRows.length > 0)
     for (chngdRow of chngdRows)
-      sGoods.getRange(4 + chngdRow, 3, 1, 2).setValues([[oldRows[chngdRow][2], oldRows[chngdRow][3]]]);
+      sGoods.getRange(4 + chngdRow, 3, 1, 2).setValues([[ oldRows[chngdRow][2], oldRows[chngdRow][3] ]]);
 
   // Вставляем новые товары
   let newLength = newRows.length;
@@ -209,18 +209,20 @@ function onOnceAnHour()
   oldRows = []; // Массив старых записей на листе Магазины, которые могут быть изменены
   lastRow = sStores.getLastRow();
   if (lastRow > 2)
-    oldRows = sStores.getRange(4, 1, lastRow-3, 3).getValues();
-    // 0:Статья	1:Инфо	2:Примечание	3:Название	4:Чеков
+    oldRows = sStores.getRange(4, 1, lastRow-3, 4).getValues();
+    // 0:Название	1:Чеков	2:Сумма	3:Последний чек	4:Статья	5:Инфо	6:Примечание
   // Заполняем список новых магазинов для вставки, фиксируем изменения в повторяющихся магазинах
   for (bill of newBills) {
     const sStore = bill.jsonBill.user;
-    const nTotal = bill.jsonBill.totalSum
+    const nTotal = bill.jsonBill.totalSum;
+    const lastBill = bill.SN;
 
     // В списке старых магазинов
     let r = oldRows.findIndex((element) => element[0] == sStore);
     if (~r) { // Увеличиваем количество чеков и обновляем общую сумму для этого магазина
       oldRows[r][1] += 1;
       oldRows[r][2] += nTotal;
+      oldRows[r][3] = lastBill;
       chngdRows.push(r); // Запоминаем индекс для обновления в таблице
       continue;
     }
@@ -230,21 +232,22 @@ function onOnceAnHour()
     if (elm != undefined) {
       elm[1] += 1;
       elm[2] += nTotal;
+      elm[3] = lastBill;
       continue;
     }
     // В списке новых тоже нет. Это первая покупка из этого магазина.
-    newRows.unshift([sStore, 1, nTotal]);
+    newRows.unshift([sStore, 1, nTotal, lastBill]);
   }
 
   Logger.log('--- Сохраняем магазины. Новых : ' + newRows.length + ' Изменено старых : ' + chngdRows.length);
   if (chngdRows.length > 0)
-    for (chngdRow of chngdRows)
-      sStores.getRange(4 + chngdRow, 2, 1, 2).setValues([[oldRows[chngdRow][1], oldRows[chngdRow][2]]]);
+    for (chngdRow of chngdRows) 
+      sStores.getRange(4 + chngdRow, 2, 1, 3).setValues([[ oldRows[chngdRow][1], oldRows[chngdRow][2], oldRows[chngdRow][3] ]]);
   // Вставляем новые магазины
   newLength = newRows.length;
   if (newLength > 0) {
     sStores.insertRowsBefore(4, newLength);
-    sStores.getRange(4, 1, newLength, 3).setValues(newRows);
+    sStores.getRange(4, 1, newLength, 4).setValues(newRows);
   }
   Logger.log('<<< Магазины сохранены.');
   Logger.log('Обработка завершена.');
