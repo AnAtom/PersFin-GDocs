@@ -4,9 +4,9 @@ billFormatShort(jBill)
 billFormatText(sBill)
 billInfo(sBill)
 billAllInfo(sBill)
-filterUnqGoods(arrGoods)
-cutPromoTagFromGoods(arrGoods)
+cutPromoTag(sProduct)
 billInfoStr(pBill)
+billFilterName(sName)
 
 */
 
@@ -36,6 +36,27 @@ function billFormatText(sBill)
     .replace(/,\"user\"/, ",\n\"user\"");
 }
 
+function billFilterName(sName)
+{
+  const s = CutInsideQuotes(sName);
+  const zs = '';
+
+  if (s != zs)
+    return s.toUpperCase();
+  else
+    return sName.toUpperCase()
+      .replace("ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО", zs)
+      .replace("АКЦИОНЕРНОЕ ОБЩЕСТВО", zs)
+      .replace("ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ", zs)
+      .replace("ЗАО", zs)
+      .replace("АО", zs)
+      .replace("ООО", zs)
+      .replace("ИП", zs)
+      .replace(/\s\s+/g,' ')
+      .trim();
+
+}
+
 // Возвращает Дату, Сумму и Магазин чека из json строки
 function billInfo(sBill)
 {
@@ -60,9 +81,9 @@ function billInfo(sBill)
   // Магазин
   i = sBill.indexOf("\"user\":\"")+8;
   const sName = sBill.slice(i, sBill.indexOf("\",", i+1))
-    .replace("АКЦИОНЕРНОЕ ОБЩЕСТВО", "АО")
-    .replace("ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ", "ООО")
-    .replace(/\\\"/g,"\"");
+    .replace(/\\\"/g,"\"")
+    .trim();
+  const sShop = billFilterName(sName);
 
   // ФН
   i = sBill.indexOf("\"fiscalDriveNumber\":")+21;
@@ -79,7 +100,7 @@ function billInfo(sBill)
   const jBill = {cashTotalSum: sCash / 100.0, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
                   items: [], totalSum: sSumm / 100.0, user: sName}
 
-  return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
+  return {dTime: dDate.getTime(), SN: 0, URL: '', Shop: sShop, jsonBill: jBill};
 }
 
 // Возвращает информацию о чеке, включая список продуктов.
@@ -132,33 +153,14 @@ function billAllInfo(sBill)
 }
 
 // Отрезаем артикулы и акционные метки в начале названия товара: 0000, *, <A>, [M], [M+]
-function cutPromoTagFromGoods(arrGoods)
+function cutPromoTag(sProduct)
 {
-  for (itm of arrGoods)
-    itm.name = itm.name
-      .replace(/^\<А\> /, '')
-      .replace(/^\[М\+?\] /, '')
-      .replace(/^[0-9]+ /, '')
-      .replace(/^\*/, '');
-  return arrGoods;
-}
-
-function filterUnqGoods(arrGoods)
-{
-  let newGoods = [];
-  for (itm of arrGoods) {
-    let item = newGoods.find((element) => element.price == itm.price && element.name == itm.name);
-    if (item == undefined)
-      newGoods.push(itm);
-    else {
-      item.quantity += itm.quantity;
-      item.sum += itm.sum;
-    }
-  }
-  if (newGoods.length == arrGoods.length)
-    return arrGoods;
-  else
-    return newGoods;
+  const zs = '';
+  return sProduct
+    .replace(/^\<А\> /, zs)
+    .replace(/^\[М\+?\] /, zs)
+    .replace(/^[0-9]+ /, zs)
+    .replace(/^\*/, zs);
 }
 
 function billInfoStr(bBill)

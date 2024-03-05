@@ -4,6 +4,9 @@ between(str, start, end) - Возвращает подстроку между д
 between2(str, start1, end1, start2, end2) - Возвращает подстроку из подстроки
 between2from(sStr, fPos, start1, end1, start2, end2) - Возвращает подстроку из подстроки после заданной позиции
 
+CutInsideQuotes(str) - Возвращает строку внутри кавычек или пустую
+CutOuterQuotes(str) - Обрезает символы по краям строки (кавычки)
+
 dbgSplitLongString(sStr, maxLngth) - Разбиваем длинную строку ( >50000 ) на массив строк по maxLngth символов
 
 */
@@ -74,6 +77,21 @@ function between2from(sStr, fPos, start1, end1, start2, end2) {
   if (endAt2 == -1)
     return zs;
   return s.slice(startAt2, endAt2).trim();
+}
+
+// Обрезает символы по краям строки (кавычки)
+function CutOuterQuotes(str) {
+  return str.slice(1, str.length - 1);
+}
+
+// Возвращает подстоку в кавычках
+function CutInsideQuotes(str) {
+  const re = /"[^"]+"/;
+  const val = re.exec(str);
+  if (val == null)
+    return "";
+  else
+    return CutOuterQuotes(val[0]);
 }
 
 // Разбиваем длинную строку ( >50000 ) на несколько строк по maxLngth символов

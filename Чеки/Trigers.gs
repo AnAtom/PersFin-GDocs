@@ -34,17 +34,29 @@ function ReadLastDate(ss, rDate)
   return dLastDate;
 }
 
+function getBillRow(theBill, sJSON)
+{
+  const jBill = theBill.jsonBill;
+  // 0:№	1:Дата	2:Сумма	3:Магазин	4:ФН	5:ФД	6:ФП	7:Наличные	8:JSON	9:URL
+  return [
+    theBill.SN,
+    jBill.dateTime,
+    jBill.totalSum,
+    jBill.user,
+    jBill.fiscalDriveNumber,
+    jBill.fiscalDocumentNumber,
+    jBill.fiscalSign,
+    jBill.cashTotalSum,
+    sJSON,
+    theBill.URL
+  ];
+}
+
 function onOnceAnHour()
 {
-  Logger.log('Обрабатываем последние чеки.');
-
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  // const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
-  // const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
-  const fSaveJSON = ss.getRangeByName('ФлагСохрJSON').getValue();
-  const fFitrUnqGoods = ss.getRangeByName('ФлагФильтрТовары').getValue();
-  const fCutPromo = ss.getRangeByName('ФлагОтрАкцТоваы');
 
+  Logger.log('Обрабатываем последние чеки.');
   let newBills = [];
 
   // Сканируем диск
@@ -71,15 +83,15 @@ function onOnceAnHour()
 
   // Записываем новые чеки
   Logger.log('>>> Сохраняем ' + cntBills + ' новых чеков.');
-  let newRows = [];
   // Сортируем перед записью
   if (cntBills > 1)
     newBills.sort((a, b) => a.dTime - b.dTime);
 
-  let n = ss.getRangeByName('НомерЧек').getValue();
-  let newRow = [];
-  let bJSON = "";
+  const fSaveJSON = ss.getRangeByName('ФлагСохрJSON').getValue();
   const sBills = ss.getSheetByName('Чеки');
+  let newRows = [];
+  let sJSON = "";
+  let n = ss.getRangeByName('НомерЧек').getValue();
   if (sBills.getLastRow() > 2) {
     // На листе есть старые чеки
     Logger.log('>>> Вставляем новые чеки в список старых на листе.');
@@ -94,16 +106,13 @@ function onOnceAnHour()
         dt = d.getTime();
       }
       bill.SN = ++n;
-      if (fSaveJSON)
-        bJSON = billFormatShort(bill.jsonBill);
-      else
-        bJSON = "";
-      newRow = [bill.SN, bill.jsonBill.dateTime, bill.jsonBill.totalSum, bill.jsonBill.cashTotalSum, 
-                bill.jsonBill.fiscalDriveNumber, bill.jsonBill.fiscalDocumentNumber, bill.jsonBill.fiscalSign, bill.jsonBill.user, bill.URL, bJSON];
       sBills.insertRowBefore(l);
-      sBills.getRange(l, 1, 1, 10).setValues([newRow]);
-      if (fSaveJSON)
+      if (fSaveJSON) {
+        sJSON = billFormatShort(bill.jsonBill);
         sBills.setRowHeightsForced(l, 1, 21);
+      } else
+        sJSON = "";
+      sBills.getRange(l, 1, 1, 10).setValues([getBillRow(bill, sJSON)]);
     }
   } else {
     // На листе нет старых чеков
@@ -111,12 +120,10 @@ function onOnceAnHour()
     for (bill of newBills) {
       bill.SN = ++n;
       if (fSaveJSON)
-        bJSON = billFormatShort(bill.jsonBill);
+        sJSON = billFormatShort(bill.jsonBill);
       else
-        bJSON = "";
-      newRow = [bill.SN, bill.jsonBill.dateTime, bill.jsonBill.totalSum, bill.jsonBill.cashTotalSum, 
-                bill.jsonBill.fiscalDriveNumber, bill.jsonBill.fiscalDocumentNumber, bill.jsonBill.fiscalSign, bill.jsonBill.user, bill.URL, bJSON];
-      newRows.unshift(newRow);
+        sJSON = "";
+      newRows.unshift(getBillRow(bill, sJSON));
     }
     sBills.insertRowsBefore(4, cntBills);
     sBills.getRange(4, 1, cntBills, 10).setValues(newRows);
@@ -126,68 +133,71 @@ function onOnceAnHour()
   Logger.log('<<< Чеки сохранены.');
 
   Logger.log('>>> Сохраняем товары из чеков.');
-  if (fCutPromo)
-    Logger.log('+++ Отрезаем артикулы и метки акций из названий товаров.');
-  if (fFitrUnqGoods)
-    Logger.log('+++ Фильтруем повторяющиеся товары в общем списке.');
+  Logger.log('+++ Отрезаем артикулы и метки акций из названий товаров.');
+  Logger.log('+++ Фильтруем повторяющиеся товары в общем списке.');
 
   const sGoods = ss.getSheetByName('Товары');
   let chngdRows = []; // Массив индексов измененных записей на листе Товары
   let oldRows = []; // Массив старых записей на листе Товары, которые могут быть изменены
   let lastRow = sGoods.getLastRow();
   if (lastRow > 2)
-    oldRows = sGoods.getRange(4, 1, lastRow-3, 4).getValues();
-    // 0:Название	1:Цена	2:Количество	3:Сумма
+    oldRows = sGoods.getRange(4, 1, lastRow-3, 6).getValues();
 
   // Заполняем список новых товаров для вставки, фиксируем изменения в повторяющихся товарах
   newRows = [];
-  for (bill of newBills) {
-    let goods = bill.jsonBill.items;
+  for (bill of newBills)
+    for (product of bill.jsonBill.items) {
+      const sProduct = cutPromoTag(product.name);
 
-    if (fCutPromo) // Отрезаем артикулы и метки акций из названий товаров
-      goods = cutPromoTagFromGoods(goods);
-
-    // Фильтруем повторяющиеся товары внутри каждого чека
-    goods = filterUnqGoods(goods);
-
-    if (fFitrUnqGoods)
-      for (product of goods) {
-        // Предварительно фильтруем повторяющиеся товары 
-        // В списке старых товаров
-        let r = oldRows.findIndex((element) => element[1] == product.price && element[0] == product.name);
-        if (~r) {
-          // Добавляем количество покупок и сумму для этого товара в списке старых товаров
-          oldRows[r][2] += product.quantity;
-          oldRows[r][3] += product.sum;
-          // Запоминаем индекс для обновления в таблице
-          chngdRows.push(r);
-          continue;
-        }
-        // В списке старых товаров его нет. Ищем в списке новых добавленных товаров
-        let elm = newRows.find((element) => element[1] == product.price && element[0] == product.name);
-        if (elm != undefined) {
-          elm[2] += product.quantity;
-          elm[3] += product.sum;
-          continue;
-        }
-        // В списке новых тоже нет. Это первая покупка этого товара.
-        newRows.unshift([product.name, product.price, product.quantity, product.sum, bill.SN, product.unit]);
+      // Ищем повторение в списке старых товаров
+      const r = oldRows.findIndex((element) => element[0] == sProduct);
+      if (~r) {
+        // Добавляем количество покупок и сумму для этого товара в списке старых товаров
+        oldRows[r][2] += product.quantity;
+        oldRows[r][1] += product.sum;
+        // Проверяем минимальную и максимальную цены
+        if (product.price < oldRows[r][4])
+          oldRows[r][4] = product.price;
+        else
+          if (product.price > oldRows[r][5])
+            oldRows[r][5] = product.price;
+        // Запоминаем индекс для обновления в таблице
+        chngdRows.push(r);
+        continue;
       }
-    else
-      for (product of goods)
-        newRows.unshift([product.name, product.price, product.quantity, product.sum, bill.SN, product.unit]);
-  }
+
+      // В списке старых товаров его нет. Ищем в списке новых добавленных товаров
+      let elm = newRows.find((element) => element[0] == sProduct);
+      if (elm != undefined) {
+        elm[2] += product.quantity;
+        elm[1] += product.sum;
+        // Проверяем минимальную и максимальную цены
+        if (product.price < elm[4])
+          elm[4] = product.price;
+        else
+          if (product.price > elm[5])
+            elm[5] = product.price;
+        continue;
+      }
+
+      // В списке новых тоже нет. Это первая покупка этого товара.
+      // 0:Название	1:Сумма	2:Количество	3:Единицы	4:Мин Цена	5:Макс Цена	6:Первый Чек	7:Проверка
+      newRows.unshift([sProduct, product.sum, product.quantity, product.unit, product.price, product.price, bill.SN]);
+    }
 
   // Обновляем данные по дублированным товарам
   if (chngdRows.length > 0)
-    for (chngdRow of chngdRows)
-      sGoods.getRange(4 + chngdRow, 3, 1, 2).setValues([[ oldRows[chngdRow][2], oldRows[chngdRow][3] ]]);
+    for (chngdRow of chngdRows) {
+      const newVal = oldRows[chngdRow];
+      sGoods.getRange(4 + chngdRow, 2, 1, 2).setValues([[ newVal[1], newVal[2] ]]);
+      sGoods.getRange(4 + chngdRow, 5, 1, 2).setValues([[ newVal[4], newVal[5] ]]);
+    }
 
   // Вставляем новые товары
   let newLength = newRows.length;
   if (newLength > 0) {
     sGoods.insertRowsBefore(4, newLength);
-    sGoods.getRange(4, 1, newLength, 6).setValues(newRows);
+    sGoods.getRange(4, 1, newLength, 7).setValues(newRows);
   }
   Logger.log('<<< Товары сохранены. Добавлено ' + newLength + ' новых товаров. Старых обновлено : ' + chngdRows.length);
 
@@ -213,7 +223,7 @@ function onOnceAnHour()
     // 0:Название	1:Чеков	2:Сумма	3:Последний чек	4:Статья	5:Инфо	6:Примечание
   // Заполняем список новых магазинов для вставки, фиксируем изменения в повторяющихся магазинах
   for (bill of newBills) {
-    const sStore = bill.jsonBill.user;
+    const sStore = bill.Shop;
     const nTotal = bill.jsonBill.totalSum;
     const lastBill = bill.SN;
 

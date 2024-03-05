@@ -1,51 +1,39 @@
-/* 
+/*
 
-billFormatText(sBill) - Разбивает строку JSON на несколько строк для читаемости. Удаляет ненужное начало и хвост.
-billInfo(sBill) - Возвращает Дату, Сумму и Магазин чека из json строки.
-billAllInfo(sBill) - Возвращает информацию о чеке, включая список продуктов.
+billFormatShort(jBill)
+billFormatText(sBill)
+billInfo(sBill)
+billAllInfo(sBill)
+filterUnqGoods(arrGoods)
+cutPromoTagFromGoods(arrGoods)
+billInfoStr(pBill)
 
 */
 
-// JSON нового формата
-
-/* [{"_id":"65b01a0cae17240837f960c2","createdAt":"2024-01-23T19:57:00+00:00","ticket":{"document":{"receipt":
-
-{"cashTotalSum":0,"code":3,"creditSum":0,
-"dateTime":"2024-01-23T22:58:00","ecashTotalSum":169000,"fiscalDocumentFormatVer":2,
-"fiscalDocumentNumber":2266,              ФД
-"fiscalDriveNumber":"7282440700394281",   ФН
-"fiscalSign":6132709,                     ФПД
-
-"items":[
-{"name":"ОПЯТА Светлое 0,5","nds":6,"paymentType":4,"price":25000,"productType":1,"quantity":1,"sum":25000},
+function billFormatShort(jBill)
 {
-  "name":"ГИННЕС 0,5","nds":6,"paymentType":4,
-  "price":139800,"productType":1,"productCodeDataError":"not supported product type 5",
-  "quantity":0.5,
-  "sum":69900
-},
-{"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000}
-],"kktRegId":"0001538015044333    ","ndsNo":169000,"operationType":1,"operator":"Елисеева Вика","prepaidSum":0,"provisionSum":0,"requestNumber":22,"retailPlace":"ресторан","shiftNumber":74,"taxationType":16,"appliedTaxationType":16,
-
-"totalSum":169000,
-"user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"НИКО\"","userInn":"7724009233  "}
-
-}}}] */
+  return JSON.stringify(jBill)
+    .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
+    .replace(/,\"items/, ",\n\"items")
+    .replace(/\[{\"name/, "[\n\t{\"name")
+    .replace(/,{\"name/g, ",\n\t{\"name")
+    .replace(/,\"totalSum/, ",\n\"totalSum");
+}
 
 // Разбивает строку JSON на несколько строк для читаемости. Удаляем '[{"_id": ... "ticket":{"document":{"receipt":', '}}}]'
 function billFormatText(sBill)
 {
   return sBill.slice(sBill.indexOf("receipt\":{")+9, -4)
-  .replace(/,\"dateTime/, ",\n\"dateTime")
-  .replace(/\"fiscalDocumentNumber/, "\n\"fiscalDocumentNumber")
-  .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
-  .replace(/\"fiscalSign/, "\n\"fiscalSign")
-  .replace(/,\"items/, ",\n\"items")
-  .replace(/\[{\"name/, "[\n{\"name")
-  .replace(/,{\"name/g, ",\n{\"name")
-  .replace(/}],\"kktRegId/, "}\n],\"kktRegId")
-  .replace(/,\"totalSum/, ",\n\"totalSum")
-  .replace(/,\"user\"/, ",\n\"user\"");
+    .replace(/,\"dateTime/, ",\n\"dateTime")
+    .replace(/\"fiscalDocumentNumber/, "\n\"fiscalDocumentNumber")
+    .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
+    .replace(/\"fiscalSign/, "\n\"fiscalSign")
+    .replace(/,\"items/, ",\n\"items")
+    .replace(/\[{\"name/, "[\n\t{\"name")
+    .replace(/,{\"name/g, ",\n\t{\"name")
+    .replace(/}],\"kktRegId/, "}\n],\"kktRegId")
+    .replace(/,\"totalSum/, ",\n\"totalSum")
+    .replace(/,\"user\"/, ",\n\"user\"");
 }
 
 // Возвращает Дату, Сумму и Магазин чека из json строки
@@ -63,6 +51,7 @@ function billInfo(sBill)
   // Дата
   i = sBill.indexOf("\"dateTime\":")+12;
   const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
+  const dDate = new Date(sDate);
 
   // Наличные
   i = sBill.indexOf("\"cashTotalSum\":")+15;
@@ -70,29 +59,49 @@ function billInfo(sBill)
 
   // Магазин
   i = sBill.indexOf("\"user\":\"")+8;
-  const sName = sBill.slice(i, sBill.indexOf("\",", i+1)).replace(/\\\"/g,"\"");
+  const sName = sBill.slice(i, sBill.indexOf("\",", i+1))
+    .replace("АКЦИОНЕРНОЕ ОБЩЕСТВО", "АО")
+    .replace("ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ", "ООО")
+    .replace(/\\\"/g,"\"");
 
-  return {date: sDate, summ: sSumm, name: sName, cash: sCash};
+  // ФН
+  i = sBill.indexOf("\"fiscalDriveNumber\":")+21;
+  const sFN = sBill.slice(i, sBill.indexOf("\"", i));
+
+  // ФД
+  i = sBill.indexOf("\"fiscalDocumentNumber\":")+23;
+  const sFD = sBill.slice(i, sBill.indexOf(",", i));
+
+  // ФП
+  i = sBill.indexOf("\"fiscalSign\":")+13;
+  const sFP = sBill.slice(i, sBill.indexOf(",", i));
+
+  const jBill = {cashTotalSum: sCash / 100.0, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
+                  items: [], totalSum: sSumm / 100.0, user: sName}
+
+  return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
 }
 
 // Возвращает информацию о чеке, включая список продуктов.
 function billAllInfo(sBill)
 {
   let inf = billInfo(sBill);
+  if (inf == undefined) return inf;
 
-  let bItems = [];
+  // {"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000,"unit":"liter"}
+
   let iName = "";
   let iPrice = 0;
   let iSum = 0;
   let iQuantity = 0;
+  let iUnit = "";
 
-  // {"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000}
-
-  let i = sBill.indexOf("\"name\":",sBill.indexOf("\"items\":[")+9);
-  while (i != -1) {
+  let i = sBill.indexOf("\"items\":[")+9;
+  i = sBill.indexOf("\"name\":", i);
+  while (~i) {
     i += 8;
     let j = sBill.indexOf(",\"nds\":", i)-1;
-    iName = sBill.slice(i,j).replace(/\\\"/g,"\"");
+    iName = sBill.slice(i,j).replace(/\\\"/g,"\"").trim();
 
     i = sBill.indexOf(",\"price\":", j+8)+9;
     j = sBill.indexOf(",", i);
@@ -100,17 +109,67 @@ function billAllInfo(sBill)
 
     i = sBill.indexOf(",\"quantity\":", j+1)+12;
     j = sBill.indexOf(",", i);
-    iQuantity = sBill.slice(i, j);
+    iQuantity = sBill.slice(i, j) / 1.0;
 
-    i = sBill.indexOf(",\"sum\":", j)+6;
+    i = sBill.indexOf(",\"sum\":", j)+7;
     j = sBill.indexOf("}", i);
-    iSum = sBill.slice(i, j);
+    let m = sBill.indexOf(",", i);
+    if (j > m) {
+      i = sBill.indexOf("unit\":", m)+7;
+      j = sBill.indexOf("}", i)-1;
+      iUnit = sBill.slice(i, j);
+    } else {
+      iSum = sBill.slice(i, j);
+      iUnit = "";
+    }
 
-    bItems.push({iname: iName, iprice: iPrice, iquantity: iQuantity, isum: iSum});
+    inf.jsonBill.items.push({name: iName, price: iPrice / 100, quantity: iQuantity / 1.0, sum: iSum / 100, unit: iUnit});
 
     i = sBill.indexOf("\"name\":", j);
   }
 
-  inf.items = bItems;
   return inf;
+}
+
+// Отрезаем артикулы и акционные метки в начале названия товара: 0000, *, <A>, [M], [M+]
+function cutPromoTagFromGoods(arrGoods)
+{
+  for (itm of arrGoods)
+    itm.name = itm.name
+      .replace(/^\<А\> /, '')
+      .replace(/^\[М\+?\] /, '')
+      .replace(/^[0-9]+ /, '')
+      .replace(/^\*/, '');
+  return arrGoods;
+}
+
+function filterUnqGoods(arrGoods)
+{
+  let newGoods = [];
+  for (itm of arrGoods) {
+    let item = newGoods.find((element) => element.price == itm.price && element.name == itm.name);
+    if (item == undefined)
+      newGoods.push(itm);
+    else {
+      item.quantity += itm.quantity;
+      item.sum += itm.sum;
+    }
+  }
+  if (newGoods.length == arrGoods.length)
+    return arrGoods;
+  else
+    return newGoods;
+}
+
+function billInfoStr(bBill)
+{
+  const s =
+    " от (" + bBill.jsonBill.dateTime.toISOString() +
+    ") магазин >" + bBill.jsonBill.user +
+    "< на сумму [" + bBill.jsonBill.totalSum + "] р. наличными {" + bBill.jsonBill.cashTotalSum +
+    "} ФН :" + bBill.jsonBill.fiscalDriveNumber +
+    " ФД :" + bBill.jsonBill.fiscalDocumentNumber +
+    " ФП :" + bBill.jsonBill.fiscalSign +
+    " товаров :" + bBill.jsonBill.items.length;
+  return s
 }

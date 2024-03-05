@@ -1,6 +1,6 @@
 /*
 
-
+ScanDrive(ss, dLastDriveDate, arrBills)
 
 */
 
@@ -25,10 +25,6 @@ function MonthNum(sMonth)
 
 function ScanDrive(ss, dLastDriveDate, arrBills)
 {
-  // const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
-  // const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
-  const fFileMonth = ss.getRangeByName('ФлагЧекиПоМесяцам').getValue();
-
   // Читаем папку, в которой собраны чеки, из ячейки ЧекиДиск
   const folderId = Sheets.Spreadsheets.get(
     ss.getId(),
@@ -43,10 +39,8 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
     .hyperlink.substring(39); // Отрезаем https://drive.google.com/drive/folders/
   const folderBills = DriveApp.getFolderById(folderId);
   Logger.log("Читаем чеки на диске из папки: " + folderBills.getName() + " Id: " + folderId);
-  const bFolders = folderBills.getFolders();
 
-  const dToday = ss.getRangeByName('ДатаСегодня').getValue();
-  const monthToday = dToday.getMonth();
+  const monthToday = ss.getRangeByName('ДатаСегодня').getValue().getMonth();
   let monthPrev = dLastDriveDate.getMonth();
   if (dLastDriveDate.getDate() < ss.getRangeByName('ДнейРетроЧекДиск').getValue()) {
     monthPrev--;
@@ -57,6 +51,7 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
   let NumBills = 0;
 
   // Сканируем вложенные папки
+  const bFolders = folderBills.getFolders();
   while (bFolders.hasNext()) {
     let bFolder = bFolders.next();
     const nMonth = bFolder.getName().slice(3);
@@ -67,7 +62,6 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
     
     Logger.log("Папка " + nMonth);
 
-    let newBillsStr = "";
     let aFiles = bFolder.getFiles();
     while (aFiles.hasNext()) {
       let fBill = aFiles.next();
@@ -83,29 +77,8 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
       let bBill = billAllInfo(sBill);
       bBill.URL = fBill.getUrl();
       arrBills.push(bBill);
-      if (fFileMonth) newBillsStr += billFormatText(sBill) + "\n\n";
       Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
     } // цикл файлов в папке
-
-    if (newBillsStr == "")
-      continue;
-
-    // Записываем новые чеки в файл
-    let fMonthName = "Чеки " + nMonth + ".txt";
-    aFiles = folderBills.getFilesByName(fMonthName);
-    if (aFiles.hasNext()) {
-      let fMonth = aFiles.next();
-      Logger.log("Обновляем файл " + fMonthName);
-      let sMonth = fMonth.getBlob().getDataAsString();
-      if (sMonth == undefined) sMonth = "";
-      fMonth.setContent(newBillsStr + sMonth);
-    }
-    else
-    {
-      Logger.log("Создаем файл " + fMonthName);
-      folderBills.createFile(fMonthName, newBillsStr);
-    }
-
   } // цикл вложенных папок по месяцам
 
   Logger.log("Считано " + NumBills + " новых чеков. Последний файл от " + newLastDriveDate.toISOString());

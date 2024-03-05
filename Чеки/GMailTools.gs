@@ -123,7 +123,9 @@ function mailGenericGetInfo(mailTmplt, email)
     .replace(/&quot;/g, '"');
   // Убираем обрамляющие кавычки
   if (sName.indexOf('"') == 0)
-    sName = sName.slice(1, sName.length-1);
+    sName = CutOuterQuotes(sName);
+
+  const sShop = billFilterName(sName);
 
   const sDate = CutByTemplate(email, mailTmplt.date)
     .replace(" | ", " ")
@@ -180,14 +182,11 @@ function mailGenericGetInfo(mailTmplt, email)
   const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
                   items: arrItems, totalSum: sSumm, user: sName}
 
-  return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
+  return {dTime: dDate.getTime(), SN: 0, URL: "", Shop: sShop, jsonBill: jBill};
 }
 
 function ScanMail(ss, dLastMailDate, arrBills)
 {
-  // const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
-  // const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
-
   let newLastMailDate = dLastMailDate;
   let NumBills = 0;
   let bBill = {};
