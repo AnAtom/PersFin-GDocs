@@ -64,14 +64,14 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
 
     let aFiles = bFolder.getFiles();
     while (aFiles.hasNext()) {
-      let fBill = aFiles.next();
-      let bFileDate = fBill.getDateCreated();
+      const fBill = aFiles.next();
+      const bFileDate = fBill.getDateCreated();
       if (bFileDate > dLastDriveDate) {
         if (bFileDate > newLastDriveDate)
           newLastDriveDate = bFileDate;
       } else continue;
 
-      let sBill = fBill.getBlob().getDataAsString();
+      const sBill = fBill.getBlob().getDataAsString();
       if (sBill == undefined) continue;
 
       let bBill = billAllInfo(sBill);

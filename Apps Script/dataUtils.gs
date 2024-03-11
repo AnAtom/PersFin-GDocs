@@ -3,7 +3,9 @@
 findInRange(rangeName, s) - Поиск в именованном диапазоне.
 findInRule(ruleName, s) - Поиск в списке выбора значения именованного диапазона.
 getMonthNum(sMonth, capitalLetter) - Возвращает номер месяца по названию.
-
+getMonthName(dDate) - Возвращает название месяца по дате
+GetGDriveFolderIdFromURL(rng) - Достает URL из Именованной ячейки таблицы.
+ReadLastDate(ss, rDate) - Читает дату из ячейки. Если ячейка пуста, то возвращает дату День1
 */
 
 // Поиск в именованном диапазоне. Возвращает индекс строки в списке занчений именованного диапазона или -1
@@ -34,6 +36,25 @@ function findInRule(ruleName, s)
       return i;
 
   return -1;
+}
+
+function MonthNum(sMonth)
+{
+  switch(sMonth) {
+    case 'Январь':  return 0;
+    case 'Февраль': return 1;
+    case 'Март': return 2;
+    case 'Апрель': return 3;
+    case 'Май': return 4;
+    case 'Июнь': return 5;
+    case 'Июль': return 6;
+    case 'Август': return 7;
+    case 'Сентябрь': return 8;
+    case 'Октябрь': return 9;
+    case 'Ноябрь': return 10;
+    case 'Декабрь': return 11;
+    default: return -1;
+  }
 }
 
 // Возвращает номер месяца по названию
@@ -73,6 +94,13 @@ function getMonthNum(sMonth, capitalLetter)
     }
 }
 
+// Возвращает название месяца по дате
+function getMonthName(dDate)
+{
+  const names = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  return names[dDate.getMonth()];    
+}
+
 // Достает URL из Именованной ячейки таблицы.
 function GetGDriveFolderIdFromURL(rng)
 {
@@ -90,5 +118,18 @@ function GetGDriveFolderIdFromURL(rng)
 
   // Отрезаем https://drive.google.com/drive/folders/
   return url.substring(39);
+}
+
+// Читает дату из ячейки. Если ячейка пуста, то возвращает дату День1.
+function ReadLastDate(ss, rDate)
+{
+  let dLastDate = rDate.getValue();
+  const sLastDate = dLastDate.toString();
+  if (sLastDate == "") {
+    dLastDate = ss.getRangeByName('День1').getValue();
+    Logger.log("Принимаем дату последнего чека : " + dLastDate.toString());
+  } else
+    Logger.log("Дата последнего чека : " + sLastDate);
+  return dLastDate;
 }
 

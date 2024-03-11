@@ -12,7 +12,8 @@ billFilterName(sName)
 
 function billFormatShort(jBill)
 {
-  return JSON.stringify(jBill)
+  return JSON.stringify(jBill) 
+    .replace(".000Z", "")
     .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
     .replace(/,\"items/, ",\n\"items")
     .replace(/\[{\"name/, "[\n\t{\"name")
@@ -54,7 +55,6 @@ function billFilterName(sName)
       .replace("ИП", zs)
       .replace(/\s\s+/g,' ')
       .trim();
-
 }
 
 // Возвращает Дату, Сумму и Магазин чека из json строки
@@ -97,8 +97,8 @@ function billInfo(sBill)
   i = sBill.indexOf("\"fiscalSign\":")+13;
   const sFP = sBill.slice(i, sBill.indexOf(",", i));
 
-  const jBill = {cashTotalSum: sCash / 100.0, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
-                  items: [], totalSum: sSumm / 100.0, user: sName}
+  const jBill = {cashTotalSum: sCash / 1.0, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
+                  items: [], totalSum: sSumm / 1.0, user: sName}
 
   return {dTime: dDate.getTime(), SN: 0, URL: '', Shop: sShop, jsonBill: jBill};
 }
@@ -144,7 +144,7 @@ function billAllInfo(sBill)
       iUnit = "";
     }
 
-    inf.jsonBill.items.push({name: iName, price: iPrice / 100, quantity: iQuantity / 1.0, sum: iSum / 100, unit: iUnit});
+    inf.jsonBill.items.push({name: iName, price: iPrice / 1.0, quantity: iQuantity / 1.0, sum: iSum / 1.0, unit: iUnit});
 
     i = sBill.indexOf("\"name\":", j);
   }
@@ -168,7 +168,8 @@ function billInfoStr(bBill)
   const s =
     " от (" + bBill.jsonBill.dateTime.toISOString() +
     ") магазин >" + bBill.jsonBill.user +
-    "< на сумму [" + bBill.jsonBill.totalSum + "] р. наличными {" + bBill.jsonBill.cashTotalSum +
+    "< на сумму [" + (bBill.jsonBill.totalSum / 100.0) +
+    "] р. наличными {" + (bBill.jsonBill.cashTotalSum / 100.0) +
     "} ФН :" + bBill.jsonBill.fiscalDriveNumber +
     " ФД :" + bBill.jsonBill.fiscalDocumentNumber +
     " ФП :" + bBill.jsonBill.fiscalSign +

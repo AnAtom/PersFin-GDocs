@@ -19,7 +19,7 @@ Name s2		Name e2		- строки начала и окончания второг
 
 Date pt		Date s1		Date e1		Date s2		Date e2		- то же для даты чека
 Total s1...		- то же для суммы чека
-Cache s1...		- то же для суммы наличными
+Cash s1...		- то же для суммы наличными
 FN s1...		- то же для ФН
 FD s1...		- то же для ФД
 FP s1...		- то же для ФПД
@@ -46,7 +46,8 @@ function GetTemplates(rTemplates)
     const tName = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tDate = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tTotal = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
-    const tCache = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tCash = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+/*
     const tFN = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tFD = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tFP = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
@@ -57,14 +58,15 @@ function GetTemplates(rTemplates)
     const tIQuantity = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tIPrice = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tISum = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
-
+*/
     Tmplts.push({
       from: sFrom,
       key: sKey,
       name: tName,
       date: tDate,
       total: tTotal,
-      cache: tCache,
+      cash: tCash
+/*
       fn: tFN,
       fd: tFD,
       fp: tFP,
@@ -75,6 +77,7 @@ function GetTemplates(rTemplates)
       iqntty: tIQuantity,
       iprice: tIPrice,
       isum: tISum
+*/
     });
   }
   Logger.log("Загружено " + Tmplts.length + " шаблонов.");
@@ -89,6 +92,7 @@ function CutByTemplate(str, tmplt)
     case 2:
         let s = between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
         return s.slice(s.indexOf(">")+1).trim();
+    case 11: return "";
   }
   Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
   return "";
@@ -123,7 +127,9 @@ function mailGenericGetInfo(mailTmplt, email)
     .replace(/&quot;/g, '"');
   // Убираем обрамляющие кавычки
   if (sName.indexOf('"') == 0)
-    sName = sName.slice(1, sName.length-1);
+    sName = cutOuterQuotes(sName);
+
+  const sShop = billFilterName(sName);
 
   const sDate = CutByTemplate(email, mailTmplt.date)
     .replace(" | ", " ")
@@ -132,10 +138,10 @@ function mailGenericGetInfo(mailTmplt, email)
 
   const sSumm = CutByTemplate(email, mailTmplt.total) / 1.0;
 
-  let sCach = CutByTemplate(email, mailTmplt.cache);
-  if (sCach == "") sCach = 0.0;
-  else sCach = sCach / 1.0;
-
+  let sCash = CutByTemplate(email, mailTmplt.cash);
+  if (sCash == "") sCash = 0.0;
+  else sCash = sCash / 1.0;
+/*
   const sFN = CutByTemplate(email, mailTmplt.fn);
   const sFD = CutByTemplate(email, mailTmplt.fd);
   const sFP = CutByTemplate(email, mailTmplt.fp);
@@ -176,22 +182,16 @@ function mailGenericGetInfo(mailTmplt, email)
       i = j + mailTmplt.item.length;
       j = email.indexOf(mailTmplt.item, i);
     }
-  }
-  const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
-                  items: arrItems, totalSum: sSumm, user: sName}
+  } */
+  //const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
+  //                items: arrItems, totalSum: sSumm, user: sName}
 
-  return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
+  //return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
+  return {dTime: dDate.getTime(), date: sDate, summ: sSumm, cash: sCash, name: sName, shop: sShop};
 }
 
 function ScanMail(ss, dLastMailDate, arrBills)
 {
-  // const fDBG = ss.getRangeByName('ФлагОтладки').getValue();
-  // const rDBG = ss.getSheetByName('DBG').getRange(1, 1);
-
-  let newLastMailDate = dLastMailDate;
-  let NumBills = 0;
-  let bBill = {};
-
   // Читаем метку, под которой собраны чеки, из ячейки ЧекиПочта
   const sLabel = ss.getRangeByName('ЧекиПочта').getValue();
   Logger.log("Читаем чеки из почты с меткой: " + sLabel);
@@ -199,15 +199,17 @@ function ScanMail(ss, dLastMailDate, arrBills)
   // Читаем шаблоны для сканера
   const eTmplts = GetTemplates(ss.getRangeByName('ШаблоныЧеков'));
 
+  let newLastMailDate = dLastMailDate;
+  let NumBills = 0;
+  let bBill = {};
+
   // Сканируем цепочки писем
   const mailThreads = GmailApp.getUserLabelByName(sLabel).getThreads();
   let thrd = 1;
-  let mURL = "";
   for (messages of mailThreads) {
-    if (messages.getLastMessageDate() > dLastMailDate)
-      mURL = messages.getPermalink();
-    else
+    if (!messages.getLastMessageDate() > dLastMailDate)
       continue;
+
     let m = 0;
     for (message of messages.getMessages()) {
       const dDate = message.getDate();
@@ -232,7 +234,6 @@ function ScanMail(ss, dLastMailDate, arrBills)
       }
 
       Logger.log( "Письмо " + thrd + "#" + ++m + " от " + dDate.toISOString() + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + sFrom + " ." );
-      //let doc = XmlService.parse(between(sBody, '<body>', '</body>'));
 
       try {
         bBill = mailGenericGetInfo(theTmplt, sBody);
@@ -240,10 +241,8 @@ function ScanMail(ss, dLastMailDate, arrBills)
         Logger.log(">>> !!! Ошибка чтения чека из письма.", err);
         continue;
       }
-      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
-
-      bBill.URL = mURL;
       arrBills.push(bBill);
+      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
     } // Письма в цепочке
     thrd++;
   } // Цепочки писем

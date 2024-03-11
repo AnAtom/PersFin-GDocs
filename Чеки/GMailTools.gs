@@ -126,6 +126,10 @@ function mailGenericGetInfo(mailTmplt, email)
     sName = CutOuterQuotes(sName);
 
   const sShop = billFilterName(sName);
+  /*if (sName == "ООО \"Кинокомпания Радуга Кино\"") {
+    Logger.log( "кино "+ email.length);
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DBG").getRange(1,1).setValue(email);
+  }*/
 
   const sDate = CutByTemplate(email, mailTmplt.date)
     .replace(" | ", " ")
@@ -174,13 +178,13 @@ function mailGenericGetInfo(mailTmplt, email)
       iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice) / 1.0;
       iSum = CutFromPosByTemplate(email, j, mailTmplt.isum) / 1.0;
 
-      arrItems.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
+      arrItems.push({name: iName, price: iPrice * 100, quantity: iQuantity, sum: iSum * 100, unit: iUnit});
       i = j + mailTmplt.item.length;
       j = email.indexOf(mailTmplt.item, i);
     }
   }
-  const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
-                  items: arrItems, totalSum: sSumm, user: sName}
+  const jBill = {cashTotalSum: sCach * 100, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
+                  items: arrItems, totalSum: sSumm * 100, user: sName}
 
   return {dTime: dDate.getTime(), SN: 0, URL: "", Shop: sShop, jsonBill: jBill};
 }
@@ -219,8 +223,8 @@ function ScanMail(ss, dLastMailDate, arrBills)
       const sBody = message.getBody();
       const sFrom = message.getFrom();
       const mFrom = between(sFrom, "<", ">");
-      /* if (mFrom == "noreply@chek.pofd.ru") {
-        Logger.log("Новый чек");
+      /* if (mFrom == "echeck@1-ofd.ru") {
+        Logger.log("Новый чек " + sBody.length);
       } */
       const theTmplt = eTmplts.find((element) => element.from == mFrom);
       if (theTmplt == undefined)

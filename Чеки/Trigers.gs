@@ -41,15 +41,28 @@ function getBillRow(theBill, sJSON)
   return [
     theBill.SN,
     jBill.dateTime,
-    jBill.totalSum,
+    jBill.totalSum / 100.0,
     jBill.user,
     jBill.fiscalDriveNumber,
     jBill.fiscalDocumentNumber,
     jBill.fiscalSign,
-    jBill.cashTotalSum,
+    jBill.cashTotalSum / 100.0,
     sJSON,
     theBill.URL
   ];
+}
+
+function TakeIntoAccount(accnt, info)
+{
+  // Добавляем количество и сумму для этого товара
+  accnt[2] += info.quantity;
+  accnt[1] += (info.sum / 100.0);
+  // Проверяем минимальную и максимальную цены
+  if (info.price < accnt[4] * 100.0)
+    accnt[4] = info.price / 100.0;
+  else
+    if (info.price > accnt[5] * 100.0)
+      accnt[5] = info.price / 100.0;
 }
 
 function onOnceAnHour()
@@ -152,37 +165,23 @@ function onOnceAnHour()
       // Ищем повторение в списке старых товаров
       const r = oldRows.findIndex((element) => element[0] == sProduct);
       if (~r) {
-        // Добавляем количество покупок и сумму для этого товара в списке старых товаров
-        oldRows[r][2] += product.quantity;
-        oldRows[r][1] += product.sum;
-        // Проверяем минимальную и максимальную цены
-        if (product.price < oldRows[r][4])
-          oldRows[r][4] = product.price;
-        else
-          if (product.price > oldRows[r][5])
-            oldRows[r][5] = product.price;
         // Запоминаем индекс для обновления в таблице
         chngdRows.push(r);
+        // Добавляем количество и сумму для этого товара в списке старых товаров
+        TakeIntoAccount(oldRows[r], product);
         continue;
       }
 
       // В списке старых товаров его нет. Ищем в списке новых добавленных товаров
       let elm = newRows.find((element) => element[0] == sProduct);
       if (elm != undefined) {
-        elm[2] += product.quantity;
-        elm[1] += product.sum;
-        // Проверяем минимальную и максимальную цены
-        if (product.price < elm[4])
-          elm[4] = product.price;
-        else
-          if (product.price > elm[5])
-            elm[5] = product.price;
+        TakeIntoAccount(elm, product);
         continue;
       }
 
       // В списке новых тоже нет. Это первая покупка этого товара.
       // 0:Название	1:Сумма	2:Количество	3:Единицы	4:Мин Цена	5:Макс Цена	6:Первый Чек	7:Проверка
-      newRows.unshift([sProduct, product.sum, product.quantity, product.unit, product.price, product.price, bill.SN]);
+      newRows.unshift([sProduct, product.sum / 100.0, product.quantity, product.unit, product.price / 100.0, product.price / 100.0, bill.SN]);
     }
 
   // Обновляем данные по дублированным товарам
@@ -224,7 +223,7 @@ function onOnceAnHour()
   // Заполняем список новых магазинов для вставки, фиксируем изменения в повторяющихся магазинах
   for (bill of newBills) {
     const sStore = bill.Shop;
-    const nTotal = bill.jsonBill.totalSum;
+    const nTotal = bill.jsonBill.totalSum / 100.0;
     const lastBill = bill.SN;
 
     // В списке старых магазинов
