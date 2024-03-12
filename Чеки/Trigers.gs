@@ -18,7 +18,7 @@ function ResetData()
     sGoods.deleteRows(4, sGoods.getLastRow()-3);
   const sStores = ss.getSheetByName('Магазины');
   if (sStores.getLastRow() > 2)
-    sStores.deleteRows(4, sStores.getLastRow()-3);
+    sStores.getRange(4, 2, lastRow-3, 3).clearContent();
 }
 
 // Читает дату из ячейки. Если ячейка пуста, то возвращает дату ДатаЧек0.

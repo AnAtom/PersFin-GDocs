@@ -1,41 +1,51 @@
 /*
 
-onEdit(e)
 onOpen(e)
+onEdit(e)
 onOnceAnHour()
+onOnceADay()
+
+Редактирование на листе «Операции»
+  SettingTrnctnName - Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
+  SettingTrnctnType - Устанавливаем доступный список операций для выбранного Типа операции
+
+Редактирование на листе «Расходы»
+  SettingCostInfo - Изменилась статья расходов, устанавливаем список расходов (Инфо)
+  SettingCostNote - Изменился пункт статьи расходов (Инфо), устанавливаем список для Примечание
+  SettingCostBill - Изменилась Заметка (парсим чек)
 
 */
 
-// "8?>2K5 565<5AOG=K5 >?5@0F88
+// Типовые ежемесячные операции
 /*
-  0B0  !C<<0   !G5B        &5;L        ?5@0F8O        "8?
+  Дата  Сумма   Счет        Цель        Операция        Тип
   -     -       -           -           -               -
--	31.01																	!=OB85					1>@>B
--	30.01	0,00 �	!15@										@>F5=BK :@4B		!?8A0=85
--	30.01	0,00 �	!15@										>30H5=85 :@4B	!?8A0=85
--	30.01	0,00 �	@548B "							@>F5=BK :@4B		!?8A0=85
--	30.01	0,00 �						@548B "	>30H5=85 :@4B	!?8A0=85
--	26.01	0,00 �						Rostelecom	;0B56					!?8A0=85
-+	25.01	0,00 �												20=A						0G8A;5=85
--	23.01	0,00 �						><C=0;:0		;0B56					!?8A0=85
--	22.01	0,00 �							8;0=0			><>3/?>40@8;		!?8A0=85
--	19.01	0,00 �						20@B8@0		;0B56					!?8A0=85
--	15.01	0,00 �	@548B   							@>F5=BK :@4B		!?8A0=85
--	15.01	0,00 �	  				@548B   	>30H5=85 :@4B	!?8A0=85
--	13.01	0,00 �						  				5@52>4					1>@>B
--	15.01	0,00 �	 					%5.0:5B		;0B56					!?8A0=85
--	11.01	0,00 �	 					"0:85 45;0	><>3/?>40@8;		!?8A0=85
-+	10.01	0,00 �																			0G8A;5=85
--	10.01	0,00 �	 					Yota				;0B56					!?8A0=85
--	09.01	0,00 �	 					/.;NA			;0B56					!?8A0=85
--	01.01																	!=OB85					1>@>B
+-	31.01																	Снятие					Оборот
+-	30.01	0,00 ₽	Сбер										Проценты крдт		Списание
+-	30.01	0,00 ₽	Сбер										Погашение крдт	Списание
+-	30.01	0,00 ₽	Кредит ВТБ							Проценты крдт		Списание
+-	30.01	0,00 ₽	ЗП					Кредит ВТБ	Погашение крдт	Списание
+-	26.01	0,00 ₽	ЗП					Rostelecom	Платеж					Списание
++	25.01	0,00 ₽	ЗП											Аванс						Начисление
+-	23.01	0,00 ₽	ЗП					Комуналка		Платеж					Списание
+-	22.01	0,00 ₽							Милана			Помог/подарил		Списание
+-	19.01	0,00 ₽	ЗП					Квартира		Платеж					Списание
+-	15.01	0,00 ₽	Кредит ВБРР							Проценты крдт		Списание
+-	15.01	0,00 ₽	ВБРР				Кредит ВБРР	Погашение крдт	Списание
+-	13.01	0,00 ₽	ЗП					ВБРР				Перевод					Оборот
+-	15.01	0,00 ₽	МИР					Х5.Пакет		Платеж					Списание
+-	11.01	0,00 ₽	МИР					Такие дела	Помог/подарил		Списание
++	10.01	0,00 ₽	ЗП											ЗП							Начисление
+-	10.01	0,00 ₽	МИР					Yota				Платеж					Списание
+-	09.01	0,00 ₽	МИР					Я.Плюс			Платеж					Списание
+-	01.01																	Снятие					Оборот
 */
 
 function putBillsToExpenses(jsonBillsArr)
 {
   //
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const costs = ss.getSheetByName(" 0AE>4K");
+  const costs = ss.getSheetByName("Расходы");
   
   // costs.expandAllRowGroups();
   const costsData = costs.getDataRange();
@@ -53,11 +63,11 @@ function putBillsToExpenses(jsonBillsArr)
   let nextDayRow = 0;
   let insertRow = 0;
 
-  // 0E>48< =0G0;> 4=59
-  // !:0=8@C5< 45=L
+  // Находим начало дней
+  // Сканируем день
   //
-  // 0E>48< >:>=G0=85 
-  // 0E>48< >:>=G0=85 <5AOF0
+  // Находим окончание 
+  // Находим окончание месяца
   for (var i = 2; i < cdRows; i++) {
     let n = 1;
     let cDate = costsData.getCell(i, 1);
@@ -65,157 +75,61 @@ function putBillsToExpenses(jsonBillsArr)
     if (iDate == "") continue;
     let dDate = new Date(iDate);
     let aDateDay = dDate.getDate();
-    // 0H;8 ?5@2CN 70?8AL
+    // Нашли первую запись
     let sDate = iDate.toISOString();
     if (costsData.getCell(i, 2).getValue() != "") {
       //
-      Logger.log(sDate + " 2@5<O " + costsData.getCell(i, 2).getValue());
+      Logger.log(sDate + " время " + costsData.getCell(i, 2).getValue());
     }
   }
-
-  // 
-
-}
-
-// C=:B <5=N !:0=8@>20BL - >GBC
-function MenuScanBillsFromMail() {
-
-  // "01;8F0 A :>B>@>9 @01>B05<
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // $;03 >B;04:8
-  const flgDbg = dbgGetDbgFlag(true);
-
-  if (flgDbg) {
-    // 8AB 4;O >B;04:8
-    var rTest = ss.getSheetByName("Test").getRange(1, 1);
-  }
-
-  var k = 0;
-  var l = 1;
-
-  var rLastDate = ss.getRangeByName("0B0>GB0'5:");
-  var dLastDate = rLastDate.getValue();
-
-  var threads = GmailApp
-                .getUserLabelByName(">Q/0=8/'5:8")
-                .getThreads();
-
-  for (var i = 0; i < threads.length; i++) {
-    Logger.log(threads[i].getFirstMessageSubject());
-    var messages = threads[i].getMessages();
-    for (var j = 0; j < messages.length; j++) {
-      var dDate = messages[j].getDate();
-      var sDate = dDate.toString();
-      if (dDate > dLastDate) {
-        //
-        var sLastDate = dLastDate.toString();
-      }
-      var sBody = messages[j].getBody();
-      Logger.log( j + " > " + messages[j].getSubject() + " [[[ "+ sBody.length.toString() +" ]]]");
-
-      if (flgDbg) {
-        // rTest.offset(k, 0)
-        let arrBody = dbgSplitLongString(sBody, 4500);
-
-      }
-
-      var bInfo = {summ: "-", date: "-", name: " ", items: []};
-      bInfo = getMailBillInfo(messages[j]);
-
-      if (flgDbg)
-      {
-        var c = 3;
-        rTest.offset(k, c++).setValue(bInfo.date);
-        rTest.offset(k, c++).setValue(bInfo.summ);
-        rTest.offset(k, c++).setValue(bInfo.name);
-
-        if (bInfo.items.length>0) {
-          rTest.offset(k++, c).setValue(bInfo.items.length);
-
-          // {iname: iName, iprice: iPrice, iquantity: iQuantity, isum: iSum}
-          bInfo.items.forEach(function(element) {
-            rTest.offset(k, c++).setValue(element.isum);
-            rTest.offset(k, c++).setValue(element.iquantity);
-            rTest.offset(k, c++).setValue(element.iprice);
-            rTest.offset(k++, c++).setValue(element.iname);
-          });
-        }
-      } 
-
-      k++;
-      Logger.log("'5: >>> " + (l++).toString() + " <<<");
-    } // !>>1I5=8O A G5:0<8
-  } // &5?>G:8 A>>1I5=89 A G5:0<8
 }
 
 function getUBERBillInfo(BillMail) {
-  let fSubject = BillMail.getSubject();
-  let sTripDate = fSubject.slice(23);
+  const sTripDate = BillMail.getSubject().slice(23);
+  const spcPos = sTripDate.indexOf(" ");
+  const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
+  const TripDate = sTripDate.slice(0, spcPos) + "."
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)) + "."
+    + sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2));
 
-  let spcPos = sTripDate.indexOf(" ");
-  let sTripDay = sTripDate.slice(0, spcPos);
-  let spcPos2 = sTripDate.indexOf(" ", spcPos+2);
-  let sTripMonth = sTripDate.slice(spcPos+1, spcPos2);
+  const fBody = BillMail.getBody();
 
-  let TripMonth = getMonthNum(sTripMonth);
-  let TripYear = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" 3.", spcPos2+2));
+  let TripTime = between2(fBody, "From", "</tr>", "<td align", "</td>");
+  TripTime = TripTime.slice(TripTime.indexOf(">")+1).trim();
 
-  var TripDate = sTripDay + "." + TripMonth + "." + TripYear;
+  const TripDateTime = TripDate + " " + TripTime;
+  const TripSumm = between2(fBody, "check__price", "</td>", ">", " ₽").trim();
 
-  let fBody = BillMail.getBody();
-  // finLib.between2();
-
-  var TripTime = between2(fBody, "From", "</tr>", "<td align", "</td>");
-  var j = TripTime.indexOf(">");
-  TripTime = TripTime.slice(j+1).trim();
-
-  var TripDateTime = TripDate + " " + TripTime;
-
-  var TripSumm = between2(fBody, "check__price", "</td>", ">", "/�").trim();
-
-  var bInfo = {summ: TripSumm, date: TripDateTime, name: '" \"/!."!\""', items: [{iname:"5@52>7:0 ?0AA068@>2 8 103060", iprice:TripSumm, isum:TripSumm, iquantity:1.0}]};
-
+  const bInfo = {summ: TripSumm, date: TripDateTime, name: '"ООО \"ЯНДЕКС.ТАКСИ\""', items: [{iname:"Перевозка пассажиров и багажа", iprice:TripSumm, isum:TripSumm, iquantity:1.0}]};
   Logger.log("UBER > ", bInfo);
   return bInfo;
 }
 
-// C=:B <5=N !:0=8@>20BL - '5:8 UBER
+// Пункт меню Сканировать - Чеки UBER
 function MenuCheckUBER() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const flgDbg = dbgGetDbgFlag(true);
+  const sTest = ss.getSheetByName("Test"); // Лист для отладки
 
-  var flgDbg = dbgGetDbgFlag(true);
-  
-  // 8AB 4;O >B;04:8
-  var sTest = ss.getSheetByName("Test");
-
-  var k = 1;
-
-  var label = GmailApp.getUserLabelByName(">Q/0=8/"0:A8");
-  var threads = label.getThreads();
+  let k = 1;
+  const threads = GmailApp
+    .getUserLabelByName("Моё/Мани/Такси")
+    .getThreads();
   for (var i = 0; i < threads.length; i++) {
     Logger.log(threads[i].getFirstMessageSubject());
     var messages = threads[i].getMessages();
     for (var j = 0; j < messages.length; j++) {
-      var message = messages[j];
-      var subject = message.getSubject();
-      Logger.log( j + " > " + subject);
-
-      // var body = message.getBody();
-      // if (flgDbg) sTest.getRange(k, 1).setValue(body);
-      
-      var bInfo = getUBERBillInfo(message);
-
+      const message = messages[j];
+      Logger.log( j + " > " + message.getSubject());
+      const bInfo = getUBERBillInfo(message);
       if (flgDbg)
       {
         sTest.getRange(k, 2).setValue(bInfo.summ);
         sTest.getRange(k, 3).setValue(bInfo.date);
       }
-
       k++;
-
-    } // !>>1I5=8O A G5:0<8 UBER
-  } // &5?>G:8 A>>1I5=89 A G5:0<8 UBER
+    } // Сообщения с чеками UBER
+  } // Цепочки сообщений с чеками UBER
 }
 
 function getYandexGoBillInfo(BillMail) {
@@ -228,7 +142,7 @@ function getYandexGoBillInfo(BillMail) {
   let sTripMonth = sTripDate.slice(spcPos+1, spcPos2);
 
   let TripMonth = getMonthNum(sTripMonth);
-  let TripYear = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" 3.", spcPos2+2));
+  let TripYear = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2));
 
   var TripDate = sTripDay + "." + TripMonth + "." + TripYear;
 
@@ -241,9 +155,9 @@ function getYandexGoBillInfo(BillMail) {
 
   var TripDateTime = TripDate + " " + TripTime;
 
-  var TripSumm = between2(fBody, "report__value_main", "</td>", ">", "/�").trim();
+  var TripSumm = between2(fBody, "report__value_main", "</td>", ">", " ₽").trim();
 
-  var bInfo = {summ: TripSumm, date: TripDateTime, name: '" \"/!."!\""', items: [{iname:"5@52>7:0 ?0AA068@>2 8 103060", iprice:TripSumm, isum:TripSumm, iquantity:1.0}]};
+  var bInfo = {summ: TripSumm, date: TripDateTime, name: '"ООО \"ЯНДЕКС.ТАКСИ\""', items: [{iname:"Перевозка пассажиров и багажа", iprice:TripSumm, isum:TripSumm, iquantity:1.0}]};
 
   Logger.log("Yandex Go> ", bInfo);
   return bInfo;
@@ -251,29 +165,22 @@ function getYandexGoBillInfo(BillMail) {
 
 function MenuCheckYandexGo() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-
   const flgDbg = dbgGetDbgFlag(true);
-  
-  // 8AB 4;O >B;04:8
-  const sTest = ss.getSheetByName("Test");
+  const sTest = ss.getSheetByName("Test"); // Лист для отладки
 
   let k = 1;
 
-  var label = GmailApp.getUserLabelByName("pers/>BG5BK/B0:A8");
-  var threads = label.getThreads();
-  if (flgDbg) SpreadsheetApp.getActive().toast(threads.length);
+  const threads = GmailApp.getUserLabelByName("pers/отчеты/такси").getThreads();
+  // if (flgDbg) SpreadsheetApp.getActive().toast(threads.length);
 
   for (var i = 0; i < threads.length; i++) {
     Logger.log(threads[i].getFirstMessageSubject());
     var messages = threads[i].getMessages();
     for (var j = 0; j < messages.length; j++) {
       var message = messages[j];
-      var subject = message.getSubject();
-      Logger.log( j + " > " + subject);
+      Logger.log( j + " > " + message.getSubject());
+      if (flgDbg) sTest.getRange(k, 1).setValue(message.getBody());
 
-      var body = message.getBody();
-      if (flgDbg) sTest.getRange(k, 1).setValue(body);
-      
       var bInfo = getYandexGoBillInfo(message);
 
       if (flgDbg)
@@ -281,11 +188,9 @@ function MenuCheckYandexGo() {
         sTest.getRange(k, 2).setValue(bInfo.summ);
         sTest.getRange(k, 3).setValue(bInfo.date);
       }
-
       k++;
-
-    } // !>>1I5=8O A G5:0<8 /=45:A Go
-  } // &5?>G:8 A>>1I5=89 A /=45:A Go
+    } // Сообщения с чеками Яндекс Go
+  } // Цепочки сообщений с Яндекс Go
 }
 
 function getAliExpressBillInfo(BillMail) {
@@ -298,13 +203,13 @@ function MenuCheckAliExpress() {
 
   var flgDbg = dbgGetDbgFlag(true);
   
-  // 8AB 4;O >B;04:8
+  // Лист для отладки
   var sTest = ss.getSheetByName("Test");
   var rTest = sTest.getRange(1, 1);
 
   var k = 0;
 
-  var label = GmailApp.getUserLabelByName(">Q/>:C?:8/AliExpress");
+  var label = GmailApp.getUserLabelByName("Моё/Покупки/AliExpress");
   var threads = label.getThreads();
   for (var i = 0; i < threads.length; i++) {
     Logger.log(threads[i].getFirstMessageSubject());
@@ -312,19 +217,19 @@ function MenuCheckAliExpress() {
     for (var j = 0; j < messages.length; j++) {
       var message = messages[j];
       var subject = message.getSubject();
-      Logger.log( j + " > " + subject + " >> " + subject.indexOf("0H =><5@ 70:070").toString());
-      if (subject.indexOf("0H =><5@ 70:070") != -1) {
+      Logger.log( j + " > " + subject + " >> " + subject.indexOf("Ваш номер заказа").toString());
+      if (subject.indexOf("Ваш номер заказа") != -1) {
         var Body = message.getBody();
         Logger.log( j + " > " + subject + " [[[ "+ Body.length.toString() +" ]]]");
 
         if (flgDbg) rTest.offset(k, 0).setValue(" > " + subject + " [[[ "+ Body.length.toString() +" ]]]"); 
         if (flgDbg) dbgLongMailBody(rTest.offset(k, 1), Body);
                 
-        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"5@52>7:0 ?0AA068@>2 8 103060",price:62500,sum:62500,quantity:1.0}];
+        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
         var bInfo = getAliExpressBillInfo(message);
 
         k++;
-      } // "5<0 A>>1I5=8O "0H =><5@ 70:070 ..."
+      } // Тема сообщения "Ваш номер заказа ..."
       else
       {
         var Body = message.getBody();
@@ -333,84 +238,68 @@ function MenuCheckAliExpress() {
         if (flgDbg) rTest.offset(k, 0).setValue(" # " + subject + " <<< "+ Body.length.toString() +" >>>"); 
         if (flgDbg) dbgLongMailBody(rTest.offset(k, 1), Body);
                 
-        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"5@52>7:0 ?0AA068@>2 8 103060",price:62500,sum:62500,quantity:1.0}];
+        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
         var bInfo = getAliExpressBillInfo(message);
 
         k++;
       }
-    } // !>>1I5=8O A G5:0<8 AliExpress
-  } // &5?>G:8 A>>1I5=89 A G5:0<8 AliExpress
+    } // Сообщения с чеками AliExpress
+  } // Цепочки сообщений с чеками AliExpress
 }
 
-function SetTargetRule(ss, c, rn)
-{
-  const range = ss.getRangeByName(rn);
-
-  if (range == undefined)
-    return;
-
-  const rule = range.getDataValidation();
-  c.setDataValidation(rule);
-}
-
-// #AB0=02;8205< 4>ABC?=K5 AG5B0 8 "8? >?5@0F88 4;O 2K1@0==>9 87 A?8A:0 >?5@0F88
+// Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
 function SettingTrnctnName(ss, br)
 {
-  const accrual = '0G8A;5=85';
-  const debit = '!?8A0=85';
-  const turnover = '1>@>B';
+  const debit = 'Списание';
+  const moving = 'Оборот';
 
   const NewVal = br.getValue();
   const OpAcc = br.offset(0,-2);
   const OpTrgt = br.offset(0,-1);
 
-  var i = findInRule(turnover, NewVal);
-  if (i != -1)
+  let i = findInRule(moving, NewVal);
+  if (~i)
   {
-    // K1@0=0 >1>@>B=0O >?5@0F8O
-    br.offset(0,1).setValue(turnover);
+    // Выбрана оборотная операция
+    br.offset(0,1).setValue(moving);
 
-    SetTargetRule(ss, OpAcc, '!G5B051');
+    SetTargetRule(ss, OpAcc, 'СчетаДеб');
 
-    const Transfer = ss.getRangeByName('AB@5@52>4').getValue();
+    const Transfer = ss.getRangeByName('стрПеревод').getValue();
     if (NewVal == Transfer)
-    {
-      // 5@52>4
-      SetTargetRule(ss, OpTrgt, '!G5B051');
-    } else {
+      SetTargetRule(ss, OpTrgt, 'СчетаДеб'); // Перевод
+    else {
       OpTrgt.clearDataValidations();
-      if (i == 0) {
-        // !=OB85
+      if (i == 0) // Снятие
         OpTrgt.clear();
-      }
     }
   }
-  else if (findInRule(debit, NewVal) != -1)
+  else if (~findInRule(debit, NewVal))
   {
-    // K1@0=0 >?@50F8O A?8A0=8O
+    // Выбрана опреация списания
     br.offset(0,1).setValue(debit);
 
-    const CredPersnt = ss.getRangeByName('AB@@F@4B').getValue();
+    const CredPersnt = ss.getRangeByName('стрПрцКрдт').getValue();
     if (NewVal == CredPersnt) {
-      // @>F5=BK ?> :@548BC
-      SetTargetRule(ss, OpAcc, '@548BK');
+      // Проценты по кредиту
+      SetTargetRule(ss, OpAcc, 'Кредиты');
       OpTrgt.clear();
     }
     else
     {
-      SetTargetRule(ss, OpAcc, '!G5B051');
+      SetTargetRule(ss, OpAcc, 'СчетаДеб');
 
-      const LoanPaymnt = ss.getRangeByName('AB@>3@4B').getValue();
+      const LoanPaymnt = ss.getRangeByName('стрПогКрдт').getValue();
       if (NewVal == LoanPaymnt) {
-        // >30H5=85 :@548B0
-        SetTargetRule(ss, OpTrgt, '@548BK');
+        // Погашение кредита
+        SetTargetRule(ss, OpTrgt, 'Кредиты');
       }
       else
       {
-        const Payment = ss.getRangeByName('AB@;0B56').getValue();
+        const Payment = ss.getRangeByName('стрПлатеж').getValue();
         if (NewVal == Payment) {
-          // ;0B56
-          SetTargetRule(ss, OpTrgt, ';0B568');
+          // Платеж
+          SetTargetRule(ss, OpTrgt, 'Платежи');
         }
         else OpTrgt.clearDataValidations();
       }
@@ -418,38 +307,36 @@ function SettingTrnctnName(ss, br)
   }
   else
   {
-    i = findInRule(accrual, NewVal);
-    if (i != -1) {
-      // K1@0=0 >?5@0F8O =0G8A;5=8O
-      br.offset(0,1).setValue(accrual);
+    const receipt = 'Начисление';
+    i = findInRule(receipt, NewVal);
+    if (~i) {
+      // Выбрана операция начисления
+      br.offset(0,1).setValue(receipt);
 
-      SetTargetRule(ss, OpAcc, '!G5B051');
-      if (i < 4) OpAcc.setValue("");
+      SetTargetRule(ss, OpAcc, 'СчетаДеб');
+      if (i < 4) OpAcc.setValue("ЗП");
     }
   }
 }
 
-// #AB0=02;8205< A>>B25BAB2CNI89 A?8A>: >?5@0F89 4;O 2K1@0==>3> "8?0 >?5@0F88
+// Устанавливаем соответствующий список операций для выбранного Типа операции
 function SettingTrnctnType(ss, br)
 {
   const NewVal = br.getValue();
-
-  if (ss.getRangeByName(NewVal) == undefined) {
-    // #AB0=02;8205< ?>;=K9 A?8A>: >?5@0F89 4;O 2K1>@0 5A;8 "8? =58725AB5=
-    NewVal = '?5@0F8O';
-  }
+  if (ss.getRangeByName(NewVal) == undefined)
+    NewVal = 'Операция'; // Устанавливаем полный список операций для выбора если Тип неизвестен
 
   SetTargetRule(ss, br.offset(0,-1), NewVal)
 }
 
-// #AB0=02;8205< A?8A>: @0AE>4>2 4;O 2K1@0==>9 AB0BL8 @0AE>4>2
+// Устанавливаем список расходов для выбранной статьи расходов
 function SettingCostInfo(ss, br)
 {
   const flgDbg = dbgGetDbgFlag(false);
   
   if (flgDbg)
   {
-    // 8AB 4;O >B;04:8
+    // Лист для отладки
     var sTest = ss.getSheetByName('Test');
     var rTest = sTest.getRange(1, 1);
   }
@@ -463,7 +350,7 @@ function SettingCostInfo(ss, br)
   
   if (NewVal != '')
   {
-    const range = ss.getRangeByName('!B AE' + NewVal);
+    const range = ss.getRangeByName('СтРсх' + NewVal);
 
     if (range != undefined)
     {
@@ -481,14 +368,14 @@ function SettingCostInfo(ss, br)
   cell.clearDataValidations();
 }
 
-// #AB0=02;8205< A?8A>: 8=D>@<0F88 4;O 2K1@0==>3> @0AE>40
+// Устанавливаем список информации для выбранного расхода
 function SettingCostNote(ss, br)
 {
   const flgDbg = dbgGetDbgFlag(false);
   
   if (flgDbg)
   {
-    // 8AB 4;O >B;04:8
+    // Лист для отладки
     var rTest = ss.getSheetByName('Test').getRange(1, 1);
   }
 
@@ -500,9 +387,9 @@ function SettingCostNote(ss, br)
   var range;
   //SpreadsheetApp.getActive().toast('Range :'+ range);
 
-  if (NewVal == '@>4C:BK') range = ss.getRangeByName('!B AE400307');
-  else if (NewVal == '82>') range = ss.getRangeByName('!B AE;:82>');
-  else if (NewVal == '010:') range = ss.getRangeByName('!B AE;:010:');
+  if (NewVal == 'Продукты') range = ss.getRangeByName('СтРсхЕдаМагаз');
+  else if (NewVal == 'Пиво') range = ss.getRangeByName('СтРсхАлкПиво');
+  else if (NewVal == 'Кабак') range = ss.getRangeByName('СтРсхАлкКабак');
 
   if (range != undefined)
   {
@@ -517,14 +404,14 @@ function SettingCostNote(ss, br)
   else cell.clearDataValidations();
 }
 
-// '8B05< 8=D>@<0F8N > G5:5 87 json AB@>:8
+// Читаем информацию о чеке из json строки
 function SettingCostBill(ss, br)
 {
   const flgDbg = dbgGetDbgFlag(false);
 
   if (flgDbg)
   {
-    // 8AB 4;O >B;04:8
+    // Лист для отладки
     var rTest = ss.getSheetByName('Test').getRange(1, 1);
   }
 
@@ -540,35 +427,59 @@ function SettingCostBill(ss, br)
       rTest.offset(3, 1).setValue(bill.name)
       .offset(1, 0).setValue(bill.summ)
       .offset(1, 0).setValue(bill.date)
-      .offset(1, 0).setValue(bill.cash);
+      .offset(1, 0).setValue(bill.cash)
+      .offset(1, 0).setValue(bill.shop);
     else rTest.offset(3, 1).setValue("UNDEFINED !!!");
   }
 
   if (bill == undefined) return;
-  // $>@<0B OG55:
-  // "dd.mm", "HH:mm", "#,##0.00[$ �]"
+  // Формат ячеек
+  // "dd.mm", "HH:mm", "#,##0.00[$ ₽]"
 
-  // KAB02;O5< AC<<C ?>:C?:8
+  // Выставляем сумму покупки
   br.offset(0,-5)
   .setValue(bill.summ)
-  .setNumberFormat("#,##0.00[$ �]");
+  .setNumberFormat("#,##0.00[$ ₽]");
 
-  // KAB02;O5< 40BC ?>:C?:8 8 ?>;CG05< 04@5A OG59:8 A 40B>9 4;O 2KAB02;5=8O 2@5<5=8
+  // Выставляем дату покупки и получаем адрес ячейки с датой для выставления времени
   const A1date = br.offset(0,-7).setValue(bill.date).setNumberFormat("dd.mm").getA1Notation();
 
-  if (flgDbg) rTest.offset(7, 1).setValue(A1date);
+  if (flgDbg) rTest.offset(8, 1).setValue(A1date);
 
-  // KAB02;O5< 2@5<O ?>:C?:8
+  // Выставляем время покупки
   br.offset(0,-6)
   .setValue("=" + A1date)
   .setNumberFormat("HH:mm");
 
-  // A;8 =0;8G=K5, B> 2KAB02;O5< AG5B A?8A0=8O
+  // Если наличные, то выставляем счет списания
   if (bill.cash != 0)
-    br.offset(0,-4).setValue("0@<0=")
+    br.offset(0,-4).setValue("Карман")
 
-  // KAB02;O5< !B0BLN, =D> 8 @8<5G0=85 4;O <03078=0
-  const storeList = ss.getRangeByName('!?A:03078=K');
+  // Выставляем Статью, Инфо и Примечание для магазина
+  const lstStores = ss.getRangeByName('СпскМагазины');
+  let shop = lstStores.getValues().find((element) => element[3] == bill.shop);
+  if (shop != undefined) {
+    if (flgDbg) rTest.offset(9, 1).setValue(shop.toString());
+    for (let i = 0; i < 3; i++)
+      br.offset(0,i-3).setValue(shop[i]);
+  } else {
+    // Добавляем в список новый магазин
+    const sShop = ss.getSheetByName('Магазины');
+    const newRow = lstStores.getNumRows() + 4;
+    sShop.insertRowBefore(newRow);
+    sShop.getRange(newRow, 4, 1, 2).setValues([[bill.shop, bill.name]]);
+  }
+}
+
+function ScanAli(ss, dLastAliDate, arrBills)
+{
+  //
+
+}
+
+function ScanUber(ss, dLastUberDate, arrBills)
+{
+  //
 
 }
 
@@ -576,15 +487,15 @@ function onEdit(e)
 {
   const ss = e.source;
 
-  // '8B05< D;03 "A?>;L7>20BL 02B>A?8A:8"
-  let br = ss.getRangeByName('$;2B>A?8A:8');
+  // Читаем флаг "Использовать автосписки"
+  let br = ss.getRangeByName('ФлАвтосписки');
   if (br == undefined || ! br.getValue()) return;
 
-  const TrnctnSheet = '?5@0F88';
-  const CostsSheet = ' 0AE>4K';
+  const TrnctnSheet = 'Операции';
+  const CostsSheet = 'Расходы';
 
   br = e.range;
-  if (br.getNumColumns() > 1) return; // !:>?8@>20;8 480?07>=
+  if (br.getNumColumns() > 1) return; // Скопировали диапазон
 
   const ncol = br.getColumn();
   const sname = ss.getActiveSheet().getSheetName();
@@ -595,33 +506,30 @@ function onEdit(e)
     if (ncol == 7)
     {
       let v = e.value;
-      // 7<5=8;AO B8? >?5@0F88
-      if (v == undefined || v == '') // #AB0=02;8205< ?>;=K9 A?8A>: >?5@0F89 4;O 2K1>@0 5A;8 "8? >?5@0F88 1K; >G8I5=
-        SetTargetRule(ss, br.offset(0,-1), '?5@0F8O');
+      // Изменился тип операции
+      if (v == undefined || v == '') // Устанавливаем полный список операций для выбора если Тип операции был очищен
+        SetTargetRule(ss, br.offset(0,-1), 'Операция');
       else SettingTrnctnType(ss, br);
     }
     else if (ncol == 6)
     {
-      // 7<5=8;0AL >?5@0F8O
+      // Изменилась операция
       SettingTrnctnName(ss, br);
     }
   }
   else if (sname == CostsSheet)
   {
-      // var v = e.value;
-      // br.setNote(v);
-
     switch(ncol) {
     case 5:
-      // 7<5=8;0AL AB0BLO @0AE>4>2
+      // Изменилась статья расходов
       SettingCostInfo(ss, br);
       break;
     case 6:
-      // 7<5=8;AO ?C=:B AB0BL8 @0AE>4>2
+      // Изменился пункт статьи расходов (Инфо)
       SettingCostNote(ss, br);
       break;
     case 8:
-      // 7<5=8;0AL 70<5B:0 (2AB028;8 G5:)
+      // Изменилась заметка (вставили чек)
       SettingCostBill(ss, br);
       break;
     }
@@ -631,11 +539,11 @@ function onEdit(e)
 function MenuCloseDay()
 {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var costs = ss.getSheetByName(" 0AE>4K");
+  var costs = ss.getSheetByName("Расходы");
   
   var flgDbg = dbgGetDbgFlag(true);
   
-  // 8AB 4;O >B;04:8
+  // Лист для отладки
   var sTest = ss.getSheetByName("Test");
   var rTest = sTest.getRange(1, 1);
 
@@ -675,47 +583,71 @@ function MenuCloseDay()
 
 function onOpen(e)
 {
-  Logger.log('>102;O5< ?C=:BK <5=N.');
+  Logger.log('Добавляем пункты меню.');
 
   const menuScan = [
-    {name: "'5:8 UBER", functionName: 'MenuCheckUBER'},
-    {name: "'5:8 /=45:A Go", functionName: 'MenuCheckYandexGo'},
-    {name: "'5:8 AliExpress", functionName: 'MenuCheckAliExpress'},
+    {name: "Чеки UBER", functionName: 'MenuCheckUBER'},
+    {name: "Чеки Яндекс Go", functionName: 'MenuCheckYandexGo'},
+    {name: "Чеки AliExpress", functionName: 'MenuCheckAliExpress'},
     null,
-    {name: "G8AB8BL >B;04:C", functionName: 'dbgClearTestSheet'}
+    {name: "Очистить отладку", functionName: 'dbgClearTestSheet'}
   ];
-  e.source.addMenu("!:0=8@>20BL", menuScan);
+  e.source.addMenu("Сканировать", menuScan);
 
   const menuFinance = [
-    {name: "0:@KBL 45=L", functionName: 'MenuCloseDay'}
+    {name: "Закрыть день", functionName: 'MenuCloseDay'}
 
   ];
-  e.source.addMenu("$8=0=AK", menuFinance);
+  e.source.addMenu("Финансы", menuFinance);
 
 }
 
 function onOnceAnHour()
 {
-  // K?>;=O5BAO 565G0A=>
-  Logger.log("1@010BK205< ?>A;54=85 G5:8");
+  // Выполняется ежечасно
+  Logger.log("Обрабатываем последние чеки");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   let newBills = [];
 
-  // !:0=8@C5< 48A:
-  const rLastDriveDate = ss.getRangeByName('0B0'5:8A:');
-  const dLastDriveDate = ReadLastDate(ss, rLastDriveDate);
-  const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
-
-  const rLastMailDate = ss.getRangeByName('0B0'5:>GB0');
+  // Сканируем чеки в почте
+  const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
   const dLastMailDate = ReadLastDate(ss, rLastMailDate);
   const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
 
-  Logger.log("!:0=8@C5< G5:8 2 ?>GB5");
-  //ReadMailOnTimer(ss);
+  // Сканируем диск
+  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
+  const dLastDriveDate = ReadLastDate(ss, rLastDriveDate);
+  const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
 
-  // 04> 2K=5AB8 2 4@C3>9 A:@8?B 8 2K?>;=OBL @565
-  Logger.log("!:0=8@C5< ?>:C?:8 Ali");
+  Logger.log("Обновляем " + newBills.length + " чеков.");
+
+  Logger.log("Обновляем даты.");
+}
+
+function onOnceADay()
+{
+  // Выполняется ежежневно
+  Logger.log("Закрываем день");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  let newBills = [];
+
+  Logger.log("Сканируем покупки Ali");
+  const rLastAliDate = ss.getRangeByName('ДатаЧекДиск');
+  const dLastAliDate = ReadLastDate(ss, rLastAliDate);
+  const newLastAliDate = ScanAli(ss, dLastAliDate, newBills);
+
+  Logger.log("Сканируем поездки Uber");
+  const rLastUberDate = ss.getRangeByName('ДатаЧекДиск');
+  const dLastUberDate = ReadLastDate(ss, rLastUberDate);
+  const newLastUberDate = ScanUber(ss, dLastUberDate, newBills);
+
+  Logger.log("Обновляем " + newBills.length + " чеков.");
+
+  Logger.log("Обновляем даты.");
+
+  // Закрываем день.
+  Logger.log("Закрываем день.");
 
 }
-   

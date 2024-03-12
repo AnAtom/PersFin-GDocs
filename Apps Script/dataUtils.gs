@@ -38,6 +38,18 @@ function findInRule(ruleName, s)
   return -1;
 }
 
+// Присваивает ячейке именованный список значений из именованной ячейки
+function SetTargetRule(ss, c, rn)
+{
+  const range = ss.getRangeByName(rn);
+
+  if (range == undefined)
+    return;
+
+  const rule = range.getDataValidation();
+  c.setDataValidation(rule);
+}
+
 function MonthNum(sMonth)
 {
   switch(sMonth) {

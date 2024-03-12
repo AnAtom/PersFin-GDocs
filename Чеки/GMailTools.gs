@@ -136,15 +136,15 @@ function mailGenericGetInfo(mailTmplt, email)
     .replace(".202", ".2");
   const dDate = getDate(sDate);
 
-  const sSumm = CutByTemplate(email, mailTmplt.total) / 1.0;
+  const sSumm = Math.round(CutByTemplate(email, mailTmplt.total) * 100.0);
 
   let sCach = CutByTemplate(email, mailTmplt.cache);
-  if (sCach == "") sCach = 0.0;
-  else sCach = sCach / 1.0;
+  if (sCach == "") sCach = 0;
+  else sCach = Math.round(sCach * 100.0);
 
-  const sFN = CutByTemplate(email, mailTmplt.fn);
-  const sFD = CutByTemplate(email, mailTmplt.fd);
-  const sFP = CutByTemplate(email, mailTmplt.fp);
+  const iFN = parseInt(CutByTemplate(email, mailTmplt.fn));
+  const iFD = parseInt(CutByTemplate(email, mailTmplt.fd));
+  const iFP = parseInt(CutByTemplate(email, mailTmplt.fp));
 
   let arrItems = [];
   let i = email.indexOf(mailTmplt.items);
@@ -175,17 +175,16 @@ function mailGenericGetInfo(mailTmplt, email)
       } else
         iUnit = "";
       iQuantity = sQuantity / 1.0;
-      iPrice = CutFromPosByTemplate(email, j, mailTmplt.iprice) / 1.0;
-      iSum = CutFromPosByTemplate(email, j, mailTmplt.isum) / 1.0;
+      iPrice = Math.round(CutFromPosByTemplate(email, j, mailTmplt.iprice) * 100.0);
+      iSum = Math.round(CutFromPosByTemplate(email, j, mailTmplt.isum) * 100.0);
 
-      arrItems.push({name: iName, price: iPrice * 100, quantity: iQuantity, sum: iSum * 100, unit: iUnit});
+      arrItems.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
       i = j + mailTmplt.item.length;
       j = email.indexOf(mailTmplt.item, i);
     }
   }
-  const jBill = {cashTotalSum: sCach * 100, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
-                  items: arrItems, totalSum: sSumm * 100, user: sName}
-
+  const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: iFN, fiscalDocumentNumber: iFD, fiscalSign: iFP,
+                  items: arrItems, totalSum: sSumm, user: sName, userInn: 0}
   return {dTime: dDate.getTime(), SN: 0, URL: "", Shop: sShop, jsonBill: jBill};
 }
 

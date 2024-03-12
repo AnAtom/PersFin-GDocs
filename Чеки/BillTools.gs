@@ -12,13 +12,16 @@ billFilterName(sName)
 
 function billFormatShort(jBill)
 {
-  return JSON.stringify(jBill) 
+  jBill.dateTime.setHours(jBill.dateTime.getHours() + 3);
+  const s = JSON.stringify(jBill)
     .replace(".000Z", "")
     .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
     .replace(/,\"items/, ",\n\"items")
     .replace(/\[{\"name/, "[\n\t{\"name")
     .replace(/,{\"name/g, ",\n\t{\"name")
     .replace(/,\"totalSum/, ",\n\"totalSum");
+  jBill.dateTime.setHours(jBill.dateTime.getHours() - 3);
+  return s;
 }
 
 // Разбивает строку JSON на несколько строк для читаемости. Удаляем '[{"_id": ... "ticket":{"document":{"receipt":', '}}}]'
@@ -67,7 +70,7 @@ function billInfo(sBill)
 
   // Сумма
   i += 11;
-  const sSumm = sBill.slice(i, sBill.indexOf(",", i));
+  const iSumm = parseInt(sBill.slice(i, sBill.indexOf(",", i)));
 
   // Дата
   i = sBill.indexOf("\"dateTime\":")+12;
@@ -76,7 +79,7 @@ function billInfo(sBill)
 
   // Наличные
   i = sBill.indexOf("\"cashTotalSum\":")+15;
-  const sCash = sBill.slice(i, sBill.indexOf(",", i));
+  const iCash = parseInt(sBill.slice(i, sBill.indexOf(",", i)));
 
   // Магазин
   i = sBill.indexOf("\"user\":\"")+8;
@@ -87,18 +90,18 @@ function billInfo(sBill)
 
   // ФН
   i = sBill.indexOf("\"fiscalDriveNumber\":")+21;
-  const sFN = sBill.slice(i, sBill.indexOf("\"", i));
+  const iFN = parseInt(sBill.slice(i, sBill.indexOf("\"", i)));
 
   // ФД
   i = sBill.indexOf("\"fiscalDocumentNumber\":")+23;
-  const sFD = sBill.slice(i, sBill.indexOf(",", i));
+  const iFD = parseInt(sBill.slice(i, sBill.indexOf(",", i)));
 
   // ФП
   i = sBill.indexOf("\"fiscalSign\":")+13;
-  const sFP = sBill.slice(i, sBill.indexOf(",", i));
+  const iFP = parseInt(sBill.slice(i, sBill.indexOf(",", i)));
 
-  const jBill = {cashTotalSum: sCash / 1.0, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
-                  items: [], totalSum: sSumm / 1.0, user: sName}
+  const jBill = {cashTotalSum: iCash, dateTime: dDate, fiscalDriveNumber: iFN, fiscalDocumentNumber: iFD, fiscalSign: iFP,
+                  items: [], totalSum: iSumm, user: sName, userInn: 0}
 
   return {dTime: dDate.getTime(), SN: 0, URL: '', Shop: sShop, jsonBill: jBill};
 }
@@ -126,7 +129,7 @@ function billAllInfo(sBill)
 
     i = sBill.indexOf(",\"price\":", j+8)+9;
     j = sBill.indexOf(",", i);
-    iPrice = sBill.slice(i, j);
+    iPrice = parseInt(sBill.slice(i, j));
 
     i = sBill.indexOf(",\"quantity\":", j+1)+12;
     j = sBill.indexOf(",", i);
@@ -140,11 +143,11 @@ function billAllInfo(sBill)
       j = sBill.indexOf("}", i)-1;
       iUnit = sBill.slice(i, j);
     } else {
-      iSum = sBill.slice(i, j);
+      iSum = parseInt(sBill.slice(i, j));
       iUnit = "";
     }
 
-    inf.jsonBill.items.push({name: iName, price: iPrice / 1.0, quantity: iQuantity / 1.0, sum: iSum / 1.0, unit: iUnit});
+    inf.jsonBill.items.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
 
     i = sBill.indexOf("\"name\":", j);
   }

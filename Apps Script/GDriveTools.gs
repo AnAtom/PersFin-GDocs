@@ -48,7 +48,7 @@ function ScanDrive(ss, dLastDriveDate, arrBills)
 
       const bBill = billInfo(sBill);
       arrBills.push(bBill);
-      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
+      Logger.log("Чек N " + ++NumBills + dbgBillInfo(bBill));
     } // цикл файлов в папке
   } // цикл вложенных папок по месяцам
 

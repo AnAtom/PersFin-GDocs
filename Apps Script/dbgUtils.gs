@@ -3,6 +3,7 @@
 dbgGetDbgFlag(clearTest) - Возвращает значение флага ФлОтладка. Если true и аргумент true, то очищает лист Test.
 dbgClearTestSheet() - Очищает и активирует лист Test.
 dbgSplitLongString(sStr, maxLngth) - Разбивает длинную строку на набор строк длиной maxLngth.
+dbgBillInfo(bBill) - Формирует строку с информацией о чеке для логирования.
 
 */
 
@@ -45,6 +46,37 @@ function dbgSplitLongString(sStr, maxLngth)
   } while (sStr.length > n);
 
   return sArr;
+}
+
+function dbgBillInfo(bBill)
+{
+  const s =
+    " от (" + bBill.date +
+    ") магазин >" + bBill.name +
+    "< на сумму [" + bBill.summ + 
+    "] р. наличными {" + bBill.cash + "}";
+    //"} ФН :" + bBill.jsonBill.fiscalDriveNumber +
+    //" ФД :" + bBill.jsonBill.fiscalDocumentNumber +
+    //" ФП :" + bBill.jsonBill.fiscalSign +
+    //" товаров :" + bBill.jsonBill.items.length;
+  return s
+}
+
+// Отладка вставки чека на листе Расходы
+function TestEditCell()
+{
+  //
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const br = ss.getSheetByName("Расходы").getRange(31,8,1,1);
+  const sv = br.getValues(); 
+  const s = br.getValue();
+  SettingCostBill(ss, br);
+}
+
+function TestBInfo(){
+  //
+  const s = '{"cashTotalSum":0,"dateTime":"2024-03-08T18:58:00","fiscalDriveNumber":9960440503269952,"fiscalDocumentNumber":65146,"fiscalSign":25409474,"items":[{"name":"[М+] Вода СВЯТОЙ ИСТОЧНИК б/г   1.5л","price":4999,"quantity":1,"sum":4999,"unit":"шт."},{"name":"Пакет ПЯТЕРОЧКА 65х40см","price":849,"quantity":1,"sum":849,"unit":"шт."},{"name":"[М+] Вода СВЯТОЙ ИСТОЧНИК б/г   1.5л","price":4999,"quantity":1,"sum":4999,"unit":"шт."},{"name":"[М+] Вода СВЯТОЙ ИСТОЧНИК б/г   1.5л","price":4999,"quantity":1,"sum":4999,"unit":"шт."},{"name":"Яйцо СЕЛЯНОЧКА кур.С0 10шт","price":13499,"quantity":1,"sum":13499,"unit":"шт."}],"totalSum":54340,"user":"ООО \"Агроторг\"","userInn":"5036045205  "}';
+  const b = billInfo(s);
 }
 
 function TestputBillsToExpenses()

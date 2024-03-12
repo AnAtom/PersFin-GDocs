@@ -1,8 +1,9 @@
 /* 
 
-billFormatText(sBill) - Разбивает строку JSON на несколько строк для читаемости. Удаляет ненужное начало и хвост.
+billFilterName(sName) - Вырезает название магазина и возвращает в верхнем регистре.
 billInfo(sBill) - Возвращает Дату, Сумму и Магазин чека из json строки.
 billAllInfo(sBill) - Возвращает информацию о чеке, включая список продуктов.
+billInfoStr(bBill) - Формирует из JSON чека информационную строку для логирования.
 
 */
 
@@ -32,22 +33,7 @@ billAllInfo(sBill) - Возвращает информацию о чеке, вк
 
 }}}] */
 
-// Разбивает строку JSON на несколько строк для читаемости. Удаляем '[{"_id": ... "ticket":{"document":{"receipt":', '}}}]'
-function billFormatText(sBill)
-{
-  return sBill.slice(sBill.indexOf("receipt\":{")+9, -4)
-    .replace(/,\"dateTime/, ",\n\"dateTime")
-    .replace(/\"fiscalDocumentNumber/, "\n\"fiscalDocumentNumber")
-    .replace(/\"fiscalDriveNumber/, "\n\"fiscalDriveNumber")
-    .replace(/\"fiscalSign/, "\n\"fiscalSign")
-    .replace(/,\"items/, ",\n\"items")
-    .replace(/\[{\"name/, "[\n\t{\"name")
-    .replace(/,{\"name/g, ",\n\t{\"name")
-    .replace(/}],\"kktRegId/, "}\n],\"kktRegId")
-    .replace(/,\"totalSum/, ",\n\"totalSum")
-    .replace(/,\"user\"/, ",\n\"user\"");
-}
-
+// Выделяет из названия организации конкретено название
 function billFilterName(sName)
 {
   const s = cutInsideQuotes(sName);
@@ -78,16 +64,18 @@ function billInfo(sBill)
 
   // Сумма
   i += 11;
-  const sSumm = sBill.slice(i, sBill.indexOf(",", i));
+  const iSumm = parseInt(sBill.slice(i, sBill.indexOf(",", i)));
 
   // Дата
   i = sBill.indexOf("\"dateTime\":")+12;
   const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
   const dDate = new Date(sDate);
+  //SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Test").getRange(1,1).setValue(dDate);
+  //Logger.log( "дата "+ sDate +" data "+dDate);
 
   // Наличные
   i = sBill.indexOf("\"cashTotalSum\":")+15;
-  const sCash = sBill.slice(i, sBill.indexOf(",", i));
+  const iCash = parseInt(sBill.slice(i, sBill.indexOf(",", i)));
 
   // Магазин
   i = sBill.indexOf("\"user\":\"")+8;
@@ -96,10 +84,7 @@ function billInfo(sBill)
     .trim();
   const sShop = billFilterName(sName);
 
-  //const jBill = {cashTotalSum: sCash / 100.0, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
-  //                items: [], totalSum: sSumm / 100.0, user: sName}
-
-  return {dTime: dDate.getTime(), date: sDate, summ: sSumm / 100.0, cash: sCash / 100.0, name: sName, shop: sShop};
+  return {dTime: dDate.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
 }
 
 // Возвращает информацию о чеке, включая список продуктов.
@@ -141,18 +126,4 @@ function billAllInfo(sBill)
 
   inf.items = bItems;
   return inf;
-}
-
-function billInfoStr(bBill)
-{
-  const s =
-    " от (" + bBill.date +
-    ") магазин >" + bBill.name +
-    "< на сумму [" + bBill.summ + 
-    "] р. наличными {" + bBill.cash + "}";
-    //"} ФН :" + bBill.jsonBill.fiscalDriveNumber +
-    //" ФД :" + bBill.jsonBill.fiscalDocumentNumber +
-    //" ФП :" + bBill.jsonBill.fiscalSign +
-    //" товаров :" + bBill.jsonBill.items.length;
-  return s
 }

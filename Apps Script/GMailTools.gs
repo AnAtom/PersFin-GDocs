@@ -142,9 +142,9 @@ function mailGenericGetInfo(mailTmplt, email)
   if (sCash == "") sCash = 0.0;
   else sCash = sCash / 1.0;
 /*
-  const sFN = CutByTemplate(email, mailTmplt.fn);
-  const sFD = CutByTemplate(email, mailTmplt.fd);
-  const sFP = CutByTemplate(email, mailTmplt.fp);
+  const iFN = parseInt(CutByTemplate(email, mailTmplt.fn));
+  const iFD = parseInt(CutByTemplate(email, mailTmplt.fd));
+  const iFP = parseInt(CutByTemplate(email, mailTmplt.fp));
 
   let arrItems = [];
   let i = email.indexOf(mailTmplt.items);
@@ -185,7 +185,6 @@ function mailGenericGetInfo(mailTmplt, email)
   } */
   //const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: sFN / 1.0, fiscalDocumentNumber: sFD / 1.0, fiscalSign: sFP / 1.0,
   //                items: arrItems, totalSum: sSumm, user: sName}
-
   //return {dTime: dDate.getTime(), SN: 0, URL: "", jsonBill: jBill};
   return {dTime: dDate.getTime(), date: sDate, summ: sSumm, cash: sCash, name: sName, shop: sShop};
 }
@@ -242,7 +241,7 @@ function ScanMail(ss, dLastMailDate, arrBills)
         continue;
       }
       arrBills.push(bBill);
-      Logger.log("Чек N " + ++NumBills + billInfoStr(bBill));
+      Logger.log("Чек N " + ++NumBills + dbgBillInfo(bBill));
     } // Письма в цепочке
     thrd++;
   } // Цепочки писем
