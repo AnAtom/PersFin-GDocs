@@ -17,7 +17,8 @@ function ResetData()
   if (sGoods.getLastRow() > 2)
     sGoods.deleteRows(4, sGoods.getLastRow()-3);
   const sStores = ss.getSheetByName('Магазины');
-  if (sStores.getLastRow() > 2)
+  const lastRow = sStores.getLastRow();
+  if (lastRow > 2)
     sStores.getRange(4, 2, lastRow-3, 3).clearContent();
 }
 
@@ -72,15 +73,15 @@ function onOnceAnHour()
   Logger.log('Обрабатываем последние чеки.');
   let newBills = [];
 
-  // Сканируем диск
-  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
-  const dLastDriveDate = ReadLastDate(ss, rLastDriveDate);
-  const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
-
   // Сканируем почту
   const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
   const dLastMailDate = ReadLastDate(ss, rLastMailDate);
   const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
+
+  // Сканируем диск
+  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
+  const dLastDriveDate = ReadLastDate(ss, rLastDriveDate);
+  const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
 
   const cntBills = newBills.length;
   if (cntBills == 0) {

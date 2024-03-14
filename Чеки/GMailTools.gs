@@ -1,14 +1,225 @@
 /*
 
-GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
-CutByTemplate - вырезает значение из сообщения по шаблону
+CutByTemplate - вырезает строку из сообщения по шаблону
+CutFromPosByTemplate - вырезает строку из сообщения после заданной позиции по шаблону
 getDateTime - читает дату из строки и возвращает UNIX время
+mailMagnitGetGoods - процедура чтения списка товаров Магнит ОФД
+mailFirstGetGoods - процедура чтения списка товаров Первый ОФД
 mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
+GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
 ScanMail - читает чеки из новых писем
 
 */
 
-/*
+function CutByTemplate(str, tmplt)
+{
+  switch(tmplt.pt) {
+    case 0: return between(str, tmplt.s1, tmplt.e1).trim();
+    case 1: return between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2).trim();
+    case 2:
+        let s = between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+        return s.slice(s.indexOf(">")+1).trim();
+    case 11: return "";
+  }
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  return "";
+}
+
+function CutFromPosByTemplate(str, fpos, tmplt)
+{
+  switch(tmplt.pt) {
+    case 0: return cutfrom(str, fpos, tmplt.s1, tmplt.e1);
+    case 1: return between2from(str, fpos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+    case 2:
+        let s = between2from(str, fpos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+        return s.slice(s.indexOf(">")+1);
+  }
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  return "";
+}
+
+function mailMagnitGetGoods(fPos, email)
+{
+  let arrItems = [];
+  let iName = "";
+  let iPrice = 0;
+  let iQuantity = 0;
+  let iSum = 0;
+  let iUnit = "";
+  let i = 0;
+  let j = 0;
+  const ePos = email.indexOf("</tbody>", fPos);
+  let cPos = email.indexOf("<td bgcolor=", fPos);
+  while (cPos < ePos) {
+    i = email.indexOf("<td class=", cPos);
+    if (i > ePos)
+      break;
+    i = email.indexOf(">", i) + 1;
+    j = email.indexOf("</td>", i);
+    iName = email.slice(i, j).trim();
+
+    i = email.indexOf(">", j + 5) + 1;
+    j = email.indexOf("</td>", i);
+    iQuantity = email.slice(i, j).trim() / 1.0;
+
+    i = email.indexOf(">", j + 5) + 1;
+    j = email.indexOf("</td>", i);
+    iPrice = Math.round(email.slice(i, j).trim() * 100.0);
+
+    i = email.indexOf(">", j + 5) + 1;
+    j = email.indexOf("</td>", i);
+    iSum = Math.round(email.slice(i, j).trim() * 100.0);
+    //
+    arrItems.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
+    cPos = email.indexOf("<td bgcolor=", j + 5);
+  }
+  return arrItems;
+}
+
+function mailFirstGetGoods(fPos, email)
+{
+  let arrItems = [];
+  let iName = "";
+  let iPrice = 0;
+  let iQuantity = 0;
+  let iSum = 0;
+  let iUnit = "";
+  let i = 0;
+  let j = 0;
+  let cPos = email.indexOf("<td valign=\"top\" width=", fPos);
+  while (~cPos) {
+    i = email.indexOf(">", cPos + 23) + 1;
+    j = email.indexOf("</td>", i);
+    iName = email.slice(i, j).trim();
+
+    i = email.indexOf(">", j + 5) + 1;
+    j = email.indexOf("</td>", i);
+    iPrice = Math.round(email.slice(i, j).replace(/\s/g,'').replace(",", ".") * 100.0);
+
+    i = email.indexOf(">", j + 5) + 1;
+    j = email.indexOf("</td>", i);
+    iQuantity = email.slice(i, j).replace(/\s/g,'').replace(",", ".") / 1.0;
+
+    i = email.indexOf(">", j + 5) + 1;
+    j = email.indexOf("</td>", i);
+    iSum = Math.round(email.slice(i, j).replace(/\s/g,'').replace(",", ".") * 100.0);
+
+    arrItems.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
+    cPos = email.indexOf("<td valign=\"top\" width=", j + 5);
+  }
+  return arrItems;
+}
+
+function mailGenericGetGoods(fPos, mailTmplt, email)
+{
+  let arrItems = [];
+  let n = 1;
+  let iName = "";
+  let sQuantity = "";
+  let iUnit = "";
+  let iQuantity = 0;
+  let iPrice = 0;
+  let iSum = 0;
+  const is = mailTmplt.item;
+  const il = is.length;
+  let j = email.indexOf(is, fPos);
+  while (~j) {
+    iName = CutFromPosByTemplate(email, j, mailTmplt.iname).trim();
+    // Отрезаем нумерацию позиций NN:
+    let k = iName.indexOf(':');
+    if (~k && iName.slice(0, k) == n++)
+      iName = iName.slice(k+1).trim();
+
+    sQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty).trim();
+    // Отрезаем единицы измерения (шт.)
+    k = sQuantity.indexOf(' ');
+    if (~k) {
+      iUnit = sQuantity.slice(k+1);
+      sQuantity = sQuantity.slice(0, k);
+    } else
+      iUnit = "";
+    iQuantity = sQuantity / 1.0;
+    iPrice = Math.round(CutFromPosByTemplate(email, j, mailTmplt.iprice) * 100.0);
+    iSum = Math.round(CutFromPosByTemplate(email, j, mailTmplt.isum) * 100.0);
+
+    arrItems.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
+    j = email.indexOf(is, j + il);
+  }
+  return arrItems;
+}
+
+function getDate(s)
+{
+  const d = "20" + s.slice(6, 8)  // Год
+    + "-" + s.slice(3, 5)         // месяц
+    + "-" + s.slice(0, 2)         // день
+    + "T" + s.slice(9);           // время
+  return new Date(d);
+}
+
+function mailGenericGetInfo(mailTmplt, email)
+{
+  // Вырезаем имя
+  let sName = CutByTemplate(email, mailTmplt.name)
+    .replace(/&quot;/g, '"');
+  // Убираем обрамляющие кавычки
+  if (sName.indexOf('"') == 0)
+    sName = CutOuterQuotes(sName);
+
+  const sShop = billFilterName(sName);
+
+  let sDate = "";
+  if (mailTmplt.date.pt == "D") {
+    let di = email.indexOf(mailTmplt.date.s1) + mailTmplt.date.s1.length;
+    const ds = mailTmplt.date.s2;
+    const dl = ds.length;
+    for (let ii = 0; ii < 5; ii++)
+      di = email.indexOf(ds, di)+dl;
+    di = email.indexOf(">", di) + 1;
+    sDate = email.slice(di, email.indexOf(mailTmplt.date.e2, di)).replace(".202", ".2");
+  } else if (mailTmplt.date.pt == "d") {
+    let di = email.indexOf(mailTmplt.date.s1) + mailTmplt.date.s1.length;
+    const ds = mailTmplt.date.s2;
+    const dl = ds.length;
+    for (let ii = 0; ii < 2; ii++)
+      di = email.indexOf(ds, di)+dl;
+    sDate = email.slice(di, email.indexOf(mailTmplt.date.e2, di)).trim().replace(".202", ".2");
+  } else {
+    sDate = CutByTemplate(email, mailTmplt.date)
+      .replace(" | ", " ")
+      .replace(".202", ".2");
+  }
+  const dDate = getDate(sDate);
+
+  const sSumm = Math.round(CutByTemplate(email, mailTmplt.total).replace(/\s/g,'').replace(",", ".") * 100.0);
+
+  let sCach = CutByTemplate(email, mailTmplt.cache);
+  if (sCach == "") sCach = 0;
+  else sCach = Math.round(sCach * 100.0);
+
+  const iFN = parseInt(CutByTemplate(email, mailTmplt.fn));
+  const iFD = parseInt(CutByTemplate(email, mailTmplt.fd));
+  const iFP = parseInt(CutByTemplate(email, mailTmplt.fp));
+
+  let arrItems = [];
+  let i = email.indexOf(mailTmplt.items);
+  if (~i) {
+    i += mailTmplt.items.length;
+
+    if (mailTmplt.item.slice(0, 7) != "intProc")
+      arrItems = mailGenericGetGoods(i, mailTmplt, email);
+    else // Невозможно выделить однозначные маркеры. Для получения данных используется специальная процедура.
+      if (mailTmplt.item == "intProcM")
+        arrItems = mailMagnitGetGoods(i, email);
+      else if (mailTmplt.item == "intProc1")
+        arrItems = mailFirstGetGoods(i, email);
+  }
+  const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: iFN, fiscalDocumentNumber: iFD, fiscalSign: iFP,
+                  items: arrItems, totalSum: sSumm, user: sName, userInn: 0}
+  return {dTime: dDate.getTime(), SN: 0, URL: "", Shop: sShop, jsonBill: jBill};
+}
+
+/* Структура шаблона
 
 From	- адрес с которого пришел чек
 Key		- Проверочная строка, которая должна присутствовать в чеке
@@ -81,113 +292,6 @@ function GetTemplates(rTemplates)
   return Tmplts;
 }
 
-function CutByTemplate(str, tmplt)
-{
-  switch(tmplt.pt) {
-    case 0: return between(str, tmplt.s1, tmplt.e1).trim();
-    case 1: return between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2).trim();
-    case 2:
-        let s = between2(str, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-        return s.slice(s.indexOf(">")+1).trim();
-  }
-  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
-  return "";
-}
-
-function CutFromPosByTemplate(str, pos, tmplt)
-{
-  switch(tmplt.pt) {
-    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1);
-    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-    case 2:
-        let s = between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-        return s.slice(s.indexOf(">")+1);
-  }
-  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
-  return "";
-}
-
-function getDate(s)
-{
-  const d = "20" + s.slice(6, 8)  // Год
-    + "-" + s.slice(3, 5)         // месяц
-    + "-" + s.slice(0, 2)         // день
-    + "T" + s.slice(9);           // время
-  return new Date(d);
-}
-
-function mailGenericGetInfo(mailTmplt, email)
-{
-  // Вырезаем имя
-  let sName = CutByTemplate(email, mailTmplt.name)
-    .replace(/&quot;/g, '"');
-  // Убираем обрамляющие кавычки
-  if (sName.indexOf('"') == 0)
-    sName = CutOuterQuotes(sName);
-
-  const sShop = billFilterName(sName);
-  /*if (sName == "ООО \"Кинокомпания Радуга Кино\"") {
-    Logger.log( "кино "+ email.length);
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DBG").getRange(1,1).setValue(email);
-  }*/
-
-  const sDate = CutByTemplate(email, mailTmplt.date)
-    .replace(" | ", " ")
-    .replace(".202", ".2");
-  const dDate = getDate(sDate);
-
-  const sSumm = Math.round(CutByTemplate(email, mailTmplt.total) * 100.0);
-
-  let sCach = CutByTemplate(email, mailTmplt.cache);
-  if (sCach == "") sCach = 0;
-  else sCach = Math.round(sCach * 100.0);
-
-  const iFN = parseInt(CutByTemplate(email, mailTmplt.fn));
-  const iFD = parseInt(CutByTemplate(email, mailTmplt.fd));
-  const iFP = parseInt(CutByTemplate(email, mailTmplt.fp));
-
-  let arrItems = [];
-  let i = email.indexOf(mailTmplt.items);
-  if (~i) {
-    i += mailTmplt.items.length;
-
-    let n = 1;
-    let iName = "";
-    let sQuantity = "";
-    let iUnit = "";
-    let iQuantity = 0;
-    let iPrice = 0;
-    let iSum = 0;
-    let j = email.indexOf(mailTmplt.item, i);
-    while (~j) {
-      iName = CutFromPosByTemplate(email, j, mailTmplt.iname).trim();
-      // Отрезаем нумерацию позиций NN:
-      let k = iName.indexOf(':');
-      if (~k && iName.slice(0, k) == n++)
-        iName = iName.slice(k+1).trim();
-
-      sQuantity = CutFromPosByTemplate(email, j, mailTmplt.iqntty).trim();
-      // Отрезаем единицы измерения (шт.)
-      k = sQuantity.indexOf(' ');
-      if (~k) {
-        iUnit = sQuantity.slice(k+1);
-        sQuantity = sQuantity.slice(0, k);
-      } else
-        iUnit = "";
-      iQuantity = sQuantity / 1.0;
-      iPrice = Math.round(CutFromPosByTemplate(email, j, mailTmplt.iprice) * 100.0);
-      iSum = Math.round(CutFromPosByTemplate(email, j, mailTmplt.isum) * 100.0);
-
-      arrItems.push({name: iName, price: iPrice, quantity: iQuantity, sum: iSum, unit: iUnit});
-      i = j + mailTmplt.item.length;
-      j = email.indexOf(mailTmplt.item, i);
-    }
-  }
-  const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: iFN, fiscalDocumentNumber: iFD, fiscalSign: iFP,
-                  items: arrItems, totalSum: sSumm, user: sName, userInn: 0}
-  return {dTime: dDate.getTime(), SN: 0, URL: "", Shop: sShop, jsonBill: jBill};
-}
-
 function ScanMail(ss, dLastMailDate, arrBills)
 {
   let newLastMailDate = dLastMailDate;
@@ -221,15 +325,14 @@ function ScanMail(ss, dLastMailDate, arrBills)
 
       const sBody = message.getBody();
       const sFrom = message.getFrom();
-      const mFrom = between(sFrom, "<", ">");
-      /* if (mFrom == "echeck@1-ofd.ru") {
-        Logger.log("Новый чек " + sBody.length);
-      } */
+      let mFrom = sFrom;
+      if (~sFrom.indexOf("<"))
+        mFrom = between(sFrom, "<", ">");
       const theTmplt = eTmplts.find((element) => element.from == mFrom);
       if (theTmplt == undefined)
       {
         Logger.log(">>> !!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо [" + sBody.length + "] от " + dDate.toISOString() + " >>> ");
-        // ss.getSheetByName('DBG').getRange(1, 1).setValue(sBody);
+        //ss.getSheetByName('DBG').getRange(1, 1).setValue(sBody);
         continue;
       }
 

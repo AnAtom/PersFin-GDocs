@@ -17,63 +17,63 @@
 
 ШаблоныЧеков
 
-ОФД	Такском	Beeline	Платформа
-From	noreply@taxcom.ru	ofdreceipt@beeline.ru	noreply@chek.pofd.ru
-Key	taxcom	ofd.beeline	platformaofd
-Name pt	0	2	1
-Name start 1	<text>Данный чек подтверждает совершение расчетов в <b>	<table class="body	<!-- Название -->
-Name end 1	</b>.</text>	/p>	</span>
-Name start 2		<p style=	<b>
-Name end 2		<	</b>
-Date pt	1	1	2
-Date s1	<span class="value receipt-value-1012"	Дата | Время	<span>Приход</span>
-Date e1	</td>	</tr>	<!-- /dateTimeString -->
-Date s2	>	align="right">	<span style=
-Date e2	</span>	</td>	</span>
-Total pt	1	2	1
-Total s1	<span class="value receipt-value-1020"	Итог:	<b>ИТОГ</b>
-Total e1	</td>	</tr>	<!-- /ИТОГ -->
-Total s2	>	<span style=	<b> = <span>
-Total e2	</span>	</span>	</span>
-Cache pt	1	2	2
-Cache s1	<span class="value receipt-value-1031	Наличные	>НАЛИЧНЫМИ<
-Cache e1	</td>	</tr>	</table>
-Cache s2	>	<span style=	<span style=
-Cache e2	</span>	</span>	</span>
-FN pt	1	0	2
-FN s1	<span class="value receipt-value-1041	ФН:	>N ФН<
-FN e1	</td>	<br	</table>
-FN s2	>		<span style=
-FN e2	</span>		</span>
-FD pt	1	0	2
-FD s1	<span class="value receipt-value-1040	ФД:	>N ФД<
-FD e1	</td>	<br	</table>
-FD s2	>		<span style=
-FD e2	</span>		</span>
-FP pt	1	0	2
-FP s1	<span class="value receipt-value-1077	ФПД:	>ФПД<
-FP e1	</td>	<br	</table>
-FP s2	>		<span style=
-FP e2	</span>		</span>
-Items	<div class="items">	КАССОВЫЙ ЧЕК	<!-- Предоплата -->
-Item	<div class="item">	<table width="100%" cellpadding="0" cellspacing="0" border="0" style="color: #4a4a4a; font-size: 15px; width: 100%; line-height: 19px;">	<!-- itemName -->
-iName pt	1	2	0
-iName s1	<span class="value receipt-value-1030	<span style=	<b>
-iName e1	</span>	</table>	</b>
-iName s2	>	<span style=	
-iName e2	; <	</span>	
-iQuantity pt	0	2	1
-iQuantity s1	<span class="value receipt-value-1023">	Цена*Кол	<!-- Цена -->
-iQuantity e1	</span>	</tr>	</b>
-iQuantity s2		<td align=	<span>
-iQuantity e2		</td>	</span>
-iPrice pt	0	2	2
-iPrice s1	<span class="value receipt-value-1079">	Цена*Кол	<!-- Цена -->
-iPrice e1	</span>	<td align=	</b>
-iPrice s2		<td width=	 x 
-iPrice e2		</td>	</span>
-iSum pt	1	2	2
-iSum s1	<span class="value receipt-value-1043	Сумма	Общая стоимость позиции с учетом скидок и наценок
-iSum e1	/span>	</tr>	</tr>
-iSum s2	>	<td 	<span style=
-iSum  e2	<	</td>	</span>
+ОФД	Такском	Beeline	Платформа	Магнит	Первый
+From	noreply@taxcom.ru	ofdreceipt@beeline.ru	noreply@chek.pofd.ru	info@ofd-magnit.ru	echeck@1-ofd.ru
+Key	taxcom	ofd.beeline	platformaofd	lk.ofd-magnit	ПЕРВЫЙ ОФД
+Name pt	0	2	1	2	0
+Name start 1	<text>Данный чек подтверждает совершение расчетов в <b>	<table class="body	<!-- Название -->	ПРИХОД	<tr><td align="center" colspan="5">
+Name end 1	</b>.</text>	/p>	</span>	<td bgcolor=	<br />
+Name start 2		<p style=	<b>	<td width=	
+Name end 2		<	</b>	</td>	
+Date pt	1	1	2	D	d
+Date s1	<span class="value receipt-value-1012"	Дата | Время	<span>Приход</span>	ПРИХОД	<td colspan="2">
+Date e1	</td>	</tr>	<!-- /dateTimeString -->	<td bgcolor=	</td>
+Date s2	>	align="right">	<span style=	<td width=	<br />
+Date e2	</span>	</td>	</span>	</td>	<br
+Total pt	1	2	1	2	2
+Total s1	<span class="value receipt-value-1020"	Итог:	<b>ИТОГ</b>	>ИТОГО:<	<nobr>
+Total e1	</td>	</tr>	<!-- /ИТОГ -->	</tr>	</nobr>
+Total s2	>	<span style=	<b> = <span>	<td class=	<span style=
+Total e2	</span>	</span>	</span>	</td>	</span>
+Cache pt	1	2	2	11	11
+Cache s1	<span class="value receipt-value-1031	Наличные	>НАЛИЧНЫМИ<		
+Cache e1	</td>	</tr>	</table>		
+Cache s2	>	<span style=	<span style=		
+Cache e2	</span>	</span>	</span>		
+FN pt	1	0	2	2	1
+FN s1	<span class="value receipt-value-1041	ФН:	>N ФН<	>N ФН:<	аличными</td>
+FN e1	</td>	<br	</table>	</tr>	Версия ФФД:
+FN s2	>		<span style=	<td class=	№ ФН:
+FN e2	</span>		</span>	</td>	</span><br />
+FD pt	1	0	2	2	1
+FD s1	<span class="value receipt-value-1040	ФД:	>N ФД<	>N ФД:<	аличными</td>
+FD e1	</td>	<br	</table>	</tr>	Версия ФФД:
+FD s2	>		<span style=	<td class=	№ ФД:
+FD e2	</span>		</span>	</td>	</span><br />
+FP pt	1	0	2	2	1
+FP s1	<span class="value receipt-value-1077	ФПД:	>ФПД<	>ФП<	аличными</td>
+FP e1	</td>	<br	</table>	</tr>	Версия ФФД:
+FP s2	>		<span style=	<td class=	ФПД:
+FP e2	</span>		</span>	</td>	</span><br />
+Items	<div class="items">	КАССОВЫЙ ЧЕК	<!-- Предоплата -->	>НАИМ. ПР.<	>Наименование<
+Item	<div class="item">	<table width="100%" cellpadding="0" cellspacing="0" border="0" style="color: #4a4a4a; font-size: 15px; width: 100%; line-height: 19px;">	<!-- itemName -->	intProcM	intProc1
+iName pt	1	2	0		
+iName s1	<span class="value receipt-value-1030	<span style=	<b>		
+iName e1	</span>	</table>	</b>		
+iName s2	>	<span style=			
+iName e2	; <	</span>			
+iQuantity pt	0	2	1		
+iQuantity s1	<span class="value receipt-value-1023">	Цена*Кол	<!-- Цена -->		
+iQuantity e1	</span>	</tr>	</b>		
+iQuantity s2		<td align=	<span>		
+iQuantity e2		</td>	</span>		
+iPrice pt	0	2	2		
+iPrice s1	<span class="value receipt-value-1079">	Цена*Кол	<!-- Цена -->		
+iPrice e1	</span>	<td align=	</b>		
+iPrice s2		<td width=	 x 		
+iPrice e2		</td>	</span>		
+iSum pt	1	2	2		
+iSum s1	<span class="value receipt-value-1043	Сумма	Общая стоимость позиции с учетом скидок и наценок		
+iSum e1	/span>	</tr>	</tr>		
+iSum s2	>	<td 	<span style=		
+iSum  e2	<	</td>	</span>		
