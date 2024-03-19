@@ -1,5 +1,6 @@
 /*
 
+ResetData()
 ScanMail()
 ScanDrive()
 
@@ -20,19 +21,6 @@ function ResetData()
   const lastRow = sStores.getLastRow();
   if (lastRow > 2)
     sStores.getRange(4, 2, lastRow-3, 3).clearContent();
-}
-
-// Читает дату из ячейки. Если ячейка пуста, то возвращает дату ДатаЧек0.
-function ReadLastDate(ss, rDate)
-{
-  let dLastDate = rDate.getValue();
-  const sLastDate = dLastDate.toString();
-  if (sLastDate == "") {
-    dLastDate = ss.getRangeByName('ДатаЧек0').getValue();
-    Logger.log("Принимаем дату последнего чека : " + dLastDate.toString());
-  } else
-    Logger.log("Дата последнего чека : " + sLastDate);
-  return dLastDate;
 }
 
 function getBillRow(theBill, sJSON)
@@ -69,18 +57,29 @@ function TakeIntoAccount(accnt, info)
 function onOnceAnHour()
 {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const dDate0 = ss.getRangeByName('ДатаЧек0').getValue();
 
   Logger.log('Обрабатываем последние чеки.');
   let newBills = [];
 
   // Сканируем почту
   const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
-  const dLastMailDate = ReadLastDate(ss, rLastMailDate);
+  let dLastMailDate = rLastMailDate.getValue();
+  if (dLastMailDate === "") {
+    dLastMailDate = dDate0;
+    Logger.log("Принимаем дату последнего письма : " + dLastMailDate);
+  } else
+    Logger.log("Дата последнего письма : " + dLastMailDate);
   const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
 
   // Сканируем диск
   const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
-  const dLastDriveDate = ReadLastDate(ss, rLastDriveDate);
+  let dLastDriveDate = rLastDriveDate.getValue();
+  if (dLastDriveDate === "") {
+    dLastDriveDate = dDate0;
+    Logger.log("Принимаем дату последнего файла : " + dLastDriveDate);
+  } else
+    Logger.log("Дата последнего файла : " + dLastDriveDate);
   const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
 
   const cntBills = newBills.length;
@@ -111,12 +110,12 @@ function onOnceAnHour()
     Logger.log('>>> Вставляем новые чеки в список старых на листе.');
     for (bill of newBills) {
       let l = 4;
-      let d = sBills.getRange(l, 2, 1, 1).getValue();
+      let d = sBills.getRange(l, 2).getValue();
       let dt = d.getTime();
       let tt = bill.dTime;
       while (tt < dt) {
-        d = sBills.getRange(++l, 2, 1, 1).getValue();
-        if (d.toString() == "") break;
+        d = sBills.getRange(++l, 2).getValue();
+        if (d === "") break;
         dt = d.getTime();
       }
       bill.SN = ++n;
@@ -182,7 +181,12 @@ function onOnceAnHour()
 
       // В списке новых тоже нет. Это первая покупка этого товара.
       // 0:Название	1:Сумма	2:Количество	3:Единицы	4:Мин Цена	5:Макс Цена	6:Первый Чек	7:Проверка
-      newRows.unshift([sProduct, product.sum / 100.0, product.quantity, product.unit, product.price / 100.0, product.price / 100.0, bill.SN]);
+      const sUnit = product.unit;
+      if (sUnit == '') {
+        // Ищем в названии ВЕС или КГ
+        if (~sUnit.toUpperCase().indexOf("ВЕС")) sUnit = "кг";
+      }
+      newRows.unshift([sProduct, product.sum / 100.0, product.quantity, sUnit, product.price / 100.0, product.price / 100.0, bill.SN]);
     }
 
   // Обновляем данные по дублированным товарам

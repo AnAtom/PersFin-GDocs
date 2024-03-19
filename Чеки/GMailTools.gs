@@ -2,10 +2,13 @@
 
 CutByTemplate - вырезает строку из сообщения по шаблону
 CutFromPosByTemplate - вырезает строку из сообщения после заданной позиции по шаблону
-getDateTime - читает дату из строки и возвращает UNIX время
+
 mailMagnitGetGoods - процедура чтения списка товаров Магнит ОФД
 mailFirstGetGoods - процедура чтения списка товаров Первый ОФД
 mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
+
+getDateByTemplate - читает дату из строки по трем алгоритмам и возвращает UNIX время
+
 GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
 ScanMail - читает чеки из новых писем
 
@@ -148,8 +151,29 @@ function mailGenericGetGoods(fPos, mailTmplt, email)
   return arrItems;
 }
 
-function getDate(s)
+function getDateByTemplate(email, tmplt)
 {
+  let s = '';
+  let l = 2;
+  switch (tmplt.pt) {
+    case 'D': l += 3;
+    case 'd':
+      let di = email.indexOf(tmplt.s1) + tmplt.s1.length;
+      const ds = tmplt.s2;
+      const dl = ds.length;
+      for (let ii = 0; ii < l; ii++)
+        di = email.indexOf(ds, di)+dl;
+      if (tmplt.pt === 'D')
+        di = email.indexOf('>', di) + 1;
+      s = email.slice(di, email.indexOf(tmplt.e2, di));
+      break;
+    default:
+      s = CutByTemplate(email, tmplt)
+          .replace(" | ", " ")
+  }
+  if (tmplt.pt === 'd')
+    s = s.trim();
+  s = s.replace(".202", ".2");
   const d = "20" + s.slice(6, 8)  // Год
     + "-" + s.slice(3, 5)         // месяц
     + "-" + s.slice(0, 2)         // день
@@ -167,35 +191,15 @@ function mailGenericGetInfo(mailTmplt, email)
     sName = CutOuterQuotes(sName);
 
   const sShop = billFilterName(sName);
+  // if (sShop == "АШАН") SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DBG').getRange(1, 1).setValue(email);
 
-  let sDate = "";
-  if (mailTmplt.date.pt == "D") {
-    let di = email.indexOf(mailTmplt.date.s1) + mailTmplt.date.s1.length;
-    const ds = mailTmplt.date.s2;
-    const dl = ds.length;
-    for (let ii = 0; ii < 5; ii++)
-      di = email.indexOf(ds, di)+dl;
-    di = email.indexOf(">", di) + 1;
-    sDate = email.slice(di, email.indexOf(mailTmplt.date.e2, di)).replace(".202", ".2");
-  } else if (mailTmplt.date.pt == "d") {
-    let di = email.indexOf(mailTmplt.date.s1) + mailTmplt.date.s1.length;
-    const ds = mailTmplt.date.s2;
-    const dl = ds.length;
-    for (let ii = 0; ii < 2; ii++)
-      di = email.indexOf(ds, di)+dl;
-    sDate = email.slice(di, email.indexOf(mailTmplt.date.e2, di)).trim().replace(".202", ".2");
-  } else {
-    sDate = CutByTemplate(email, mailTmplt.date)
-      .replace(" | ", " ")
-      .replace(".202", ".2");
-  }
-  const dDate = getDate(sDate);
+  const dDate = getDateByTemplate(email, mailTmplt.date);
 
   const sSumm = Math.round(CutByTemplate(email, mailTmplt.total).replace(/\s/g,'').replace(",", ".") * 100.0);
 
-  let sCach = CutByTemplate(email, mailTmplt.cache);
-  if (sCach == "") sCach = 0;
-  else sCach = Math.round(sCach * 100.0);
+  let sCash = CutByTemplate(email, mailTmplt.cash);
+  if (sCash == "") sCash = 0;
+  else sCash = Math.round(sCash * 100.0);
 
   const iFN = parseInt(CutByTemplate(email, mailTmplt.fn));
   const iFD = parseInt(CutByTemplate(email, mailTmplt.fd));
@@ -214,7 +218,7 @@ function mailGenericGetInfo(mailTmplt, email)
       else if (mailTmplt.item == "intProc1")
         arrItems = mailFirstGetGoods(i, email);
   }
-  const jBill = {cashTotalSum: sCach, dateTime: dDate, fiscalDriveNumber: iFN, fiscalDocumentNumber: iFD, fiscalSign: iFP,
+  const jBill = {cashTotalSum: sCash, dateTime: dDate, fiscalDriveNumber: iFN, fiscalDocumentNumber: iFD, fiscalSign: iFP,
                   items: arrItems, totalSum: sSumm, user: sName, userInn: 0}
   return {dTime: dDate.getTime(), SN: 0, URL: "", Shop: sShop, jsonBill: jBill};
 }
@@ -230,7 +234,7 @@ Name s2		Name e2		- строки начала и окончания второг
 
 Date pt		Date s1		Date e1		Date s2		Date e2		- то же для даты чека
 Total s1...		- то же для суммы чека
-Cache s1...		- то же для суммы наличными
+Cash s1...		- то же для суммы наличными
 FN s1...		- то же для ФН
 FD s1...		- то же для ФД
 FP s1...		- то же для ФПД
@@ -257,7 +261,7 @@ function GetTemplates(rTemplates)
     const tName = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tDate = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tTotal = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
-    const tCache = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
+    const tCash = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tFN = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tFD = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
     const tFP = {pt: v[j++][i], s1: v[j++][i], e1: v[j++][i], s2: v[j++][i], e2: v[j++][i]};
@@ -275,7 +279,7 @@ function GetTemplates(rTemplates)
       name: tName,
       date: tDate,
       total: tTotal,
-      cache: tCache,
+      cash: tCash,
       fn: tFN,
       fd: tFD,
       fp: tFP,
@@ -329,7 +333,7 @@ function ScanMail(ss, dLastMailDate, arrBills)
       if (~sFrom.indexOf("<"))
         mFrom = between(sFrom, "<", ">");
       const theTmplt = eTmplts.find((element) => element.from == mFrom);
-      if (theTmplt == undefined)
+      if (theTmplt == undefined) //  || mFrom == "echeck@1-ofd.ru"
       {
         Logger.log(">>> !!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо [" + sBody.length + "] от " + dDate.toISOString() + " >>> ");
         //ss.getSheetByName('DBG').getRange(1, 1).setValue(sBody);
