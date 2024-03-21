@@ -4,6 +4,7 @@ onOpen(e)
 onEdit(e)
 onOnceAnHour()
 onOnceADay()
+onOnceAMonth()
 
 Редактирование на листе «Операции»
   SettingTrnctnName - Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
@@ -63,24 +64,45 @@ function putBillsToExpenses(jsonBillsArr)
   let nextDayRow = 0;
   let insertRow = 0;
 
+/*
+  15.03		
+  15.03				300,00 ₽
+  15.03 12:22 519,60 ₽
+__15.03________50,00 ₽________
+  14.03				100,00 ₽
+  14.03	23:42	500,00 ₽
+*/
+
   // Находим начало дней
   // Сканируем день
   //
   // Находим окончание 
   // Находим окончание месяца
+  // object
+  // number
+  // string
+  let sss = "";
   for (var i = 2; i < cdRows; i++) {
     let n = 1;
     let cDate = costsData.getCell(i, 1);
     let iDate = cDate.getValue();
     if (iDate == "") continue;
-    let dDate = new Date(iDate);
-    let aDateDay = dDate.getDate();
+    //let dDate = new Date(iDate);
+    let aDateDay = iDate.getDate();
     // Нашли первую запись
     let sDate = iDate.toISOString();
-    if (costsData.getCell(i, 2).getValue() != "") {
+    let oTime = costsData.getCell(i, 2).getValue();
+    let s = typeof oTime;
+
+    if (oTime === "")
+      continue;
+    else {
       //
-      Logger.log(sDate + " время " + costsData.getCell(i, 2).getValue());
+      let sTime = oTime;
+      Logger.log("Строка " + i + " дата: " + sDate + " время " + sTime);
     }
+    let sSumm = costsData.getCell(i, 3).getValue();
+    sss = typeof sSumm;
   }
 }
 
@@ -250,71 +272,58 @@ function MenuCheckAliExpress() {
 // Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
 function SettingTrnctnName(ss, br)
 {
+  const NewVal = br.getValue();
+  const OpAcc = br.offset(0,-2); // Счет
+  const OpTrgt = br.offset(0,-1); // Цель
+
   const debit = 'Списание';
   const moving = 'Оборот';
-
-  const NewVal = br.getValue();
-  const OpAcc = br.offset(0,-2);
-  const OpTrgt = br.offset(0,-1);
-
   let i = findInRule(moving, NewVal);
   if (~i)
   {
     // Выбрана оборотная операция
     br.offset(0,1).setValue(moving);
-
     SetTargetRule(ss, OpAcc, 'СчетаДеб');
 
-    const Transfer = ss.getRangeByName('стрПеревод').getValue();
-    if (NewVal == Transfer)
+    if (NewVal == ss.getRangeByName('стрПеревод').getValue())
       SetTargetRule(ss, OpTrgt, 'СчетаДеб'); // Перевод
-    else {
+    else
+    {
       OpTrgt.clearDataValidations();
       if (i == 0) // Снятие
-        OpTrgt.clear();
+        OpTrgt.clearContent();
     }
   }
   else if (~findInRule(debit, NewVal))
-  {
-    // Выбрана опреация списания
-    br.offset(0,1).setValue(debit);
-
-    const CredPersnt = ss.getRangeByName('стрПрцКрдт').getValue();
-    if (NewVal == CredPersnt) {
-      // Проценты по кредиту
-      SetTargetRule(ss, OpAcc, 'Кредиты');
-      OpTrgt.clear();
+  { // Выбрана опреация списания
+    br.offset(0,1).setValue(debit); // Списовать можем только с деьитовых счетов
+    const credit = 'Кредиты';
+    if (NewVal == ss.getRangeByName('стрПрцКрдт').getValue())
+    { // Проценты по кредиту
+      SetTargetRule(ss, OpAcc, credit);
+      OpTrgt.clearDataValidations().clearContent();
     }
     else
     {
       SetTargetRule(ss, OpAcc, 'СчетаДеб');
-
-      const LoanPaymnt = ss.getRangeByName('стрПогКрдт').getValue();
-      if (NewVal == LoanPaymnt) {
-        // Погашение кредита
-        SetTargetRule(ss, OpTrgt, 'Кредиты');
-      }
+      if (NewVal == ss.getRangeByName('стрПогКрдт').getValue()) // Погашение кредита
+        SetTargetRule(ss, OpTrgt, credit);
       else
-      {
-        const Payment = ss.getRangeByName('стрПлатеж').getValue();
-        if (NewVal == Payment) {
-          // Платеж
+        if (NewVal == ss.getRangeByName('стрПлатеж').getValue()) // Платеж
           SetTargetRule(ss, OpTrgt, 'Платежи');
-        }
-        else OpTrgt.clearDataValidations();
-      }
+        else
+          OpTrgt.clearDataValidations();
     }
   }
   else
   {
     const receipt = 'Начисление';
     i = findInRule(receipt, NewVal);
-    if (~i) {
-      // Выбрана операция начисления
+    if (~i) { // Выбрана операция начисления
       br.offset(0,1).setValue(receipt);
-
       SetTargetRule(ss, OpAcc, 'СчетаДеб');
-      if (i < 4) OpAcc.setValue("ЗП");
+      if (i < 4)
+        OpAcc.setValue("ЗП");
     }
   }
 }
@@ -333,12 +342,12 @@ function SettingTrnctnType(ss, br)
 function SettingCostInfo(ss, br)
 {
   const flgDbg = dbgGetDbgFlag(false);
-  
+
   if (flgDbg)
   {
     // Лист для отладки
-    var sTest = ss.getSheetByName('Test');
-    var rTest = sTest.getRange(1, 1);
+    const sTest = ss.getSheetByName('Test');
+    const rTest = sTest.getRange(1, 1);
   }
   //br.setNote('Test :' + sTest + ' Range :' + rTest.getNumRows());
 
@@ -364,7 +373,6 @@ function SettingCostInfo(ss, br)
       return;
     }
   }
-
   cell.clearDataValidations();
 }
 
@@ -458,29 +466,68 @@ function SettingCostBill(ss, br)
   // Выставляем Статью, Инфо и Примечание для магазина
   const lstStores = ss.getRangeByName('СпскМагазины');
   let shop = lstStores.getValues().find((element) => element[3] == bill.shop);
-  if (shop != undefined) {
-    if (flgDbg) rTest.offset(9, 1).setValue(shop.toString());
-    for (let i = 0; i < 3; i++)
-      br.offset(0,i-3).setValue(shop[i]);
-  } else {
+  if (shop == undefined) {
     // Добавляем в список новый магазин
+    Logger.log("Новый магазин [" + bill.shop + "] (" + bill.name + ")");
     const sShop = ss.getSheetByName('Магазины');
     const newRow = lstStores.getNumRows() + 4;
     sShop.insertRowBefore(newRow);
     sShop.getRange(newRow, 4, 1, 2).setValues([[bill.shop, bill.name]]);
-  }
+  } else
+    for (let i = 0; i < 3; i++)
+      br.offset(0,i-3).setValue(shop[i]);
 }
 
 function ScanAli(ss, dLastAliDate, arrBills)
 {
-  //
+  // Раз в день сканируем заказы AliExpress
+  let newLastAliDate = dLastAliDate;
+  let NumBills = 0;
+  let bBill = {};
 
+  // Сканируем цепочки писем
+  let thrd = 1;
+  const mailThreads = mailGetThreadByRngName('ЧекиAli');
+  for (messages of mailThreads) {
+    if (!messages.getLastMessageDate() > dLastAliDate)
+      continue;
+
+    let m = 0;
+    for (message of messages.getMessages()) {
+      const dDate = message.getDate();
+      if (dDate > dLastAliDate) {
+        if (dDate > newLastAliDate)
+          newLastAliDate = dDate;
+      } else
+        continue;
+
+      const sBody = message.getBody();
+      const mFrom = between(message.getFrom(), "<", ">");
+      Logger.log( "Письмо " + thrd + "#" + ++m + " от " + dDate.toISOString() + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + mFrom + " ." );
+
+      bBill = {dTime: dDate.getTime(), date: dDate.toISOString(), summ: 0, cash: 0, name: "a", shop: "A"}
+      /*try {
+        bBill = mailGenericGetInfo(theTmplt, sBody);
+      } catch (err) {
+        Logger.log(">>> !!! Ошибка чтения чека из письма.", err);
+        continue;
+      }*/
+      arrBills.push(bBill);
+      Logger.log("Чек N " + ++NumBills + dbgBillInfo(bBill));
+    } // Письма в цепочке
+    thrd++;
+  } // Цепочки писем
+
+  Logger.log("Считано " + NumBills + " новых чеков. Последнее письмо от " + newLastAliDate.toISOString());
+
+  return newLastAliDate;
 }
 
 function ScanUber(ss, dLastUberDate, arrBills)
 {
-  //
+  // Раз в день сканируем поездки Uber
 
+  return dLastUberDate;
 }
 
 function onEdit(e) 
@@ -491,48 +538,47 @@ function onEdit(e)
   let br = ss.getRangeByName('ФлАвтосписки');
   if (br == undefined || ! br.getValue()) return;
 
-  const TrnctnSheet = 'Операции';
-  const CostsSheet = 'Расходы';
-
   br = e.range;
-  if (br.getNumColumns() > 1) return; // Скопировали диапазон
+  if (br.getNumColumns() > 1) // Скопировали диапазон
+    return;
 
   const ncol = br.getColumn();
   const sname = ss.getActiveSheet().getSheetName();
-  //SpreadsheetApp.getActive().toast(sname);
+  let cname = ss.getActiveSheet().getRange(1, ncol).getValue();
+  if (cname == undefined || cname == '')
+    cname = ncol;
+  Logger.log("Редактируем на листе [" + sname + "] в колонке (" + cname + ") строку :" + br.getRow());
 
-  if (sname == TrnctnSheet)
-  {
-    if (ncol == 7)
-    {
-      let v = e.value;
-      // Изменился тип операции
-      if (v == undefined || v == '') // Устанавливаем полный список операций для выбора если Тип операции был очищен
-        SetTargetRule(ss, br.offset(0,-1), 'Операция');
-      else SettingTrnctnType(ss, br);
-    }
-    else if (ncol == 6)
-    {
-      // Изменилась операция
-      SettingTrnctnName(ss, br);
-    }
-  }
-  else if (sname == CostsSheet)
-  {
-    switch(ncol) {
-    case 5:
-      // Изменилась статья расходов
-      SettingCostInfo(ss, br);
-      break;
-    case 6:
-      // Изменился пункт статьи расходов (Инфо)
-      SettingCostNote(ss, br);
-      break;
-    case 8:
-      // Изменилась заметка (вставили чек)
-      SettingCostBill(ss, br);
-      break;
-    }
+  switch(sname) {
+    case 'Операции':
+      switch(ncol) {
+        case 7: // Изменился Тип операции
+          const v = e.value;
+          if (v == undefined || v == '') // Устанавливаем полный список операций для выбора если Тип операции был очищен
+            SetTargetRule(ss, br.offset(0,-1), 'Операция');
+          else
+            SettingTrnctnType(ss, br);
+          return;
+        case 6: // Изменилась Операция
+          SettingTrnctnName(ss, br);
+        default:
+          return;
+      }
+    case 'Расходы':
+      switch(ncol) {
+        case 5:
+          // Изменилась статья расходов
+          SettingCostInfo(ss, br);
+          return;
+        case 6:
+          // Изменился пункт статьи расходов (Инфо)
+          SettingCostNote(ss, br);
+          return;
+        case 8:
+          // Изменилась заметка (вставили чек)
+          SettingCostBill(ss, br);
+          return;
+      }
   }
 }
 
@@ -599,7 +645,6 @@ function onOpen(e)
 
   ];
   e.source.addMenu("Финансы", menuFinance);
-
 }
 
 function onOnceAnHour()
@@ -607,47 +652,201 @@ function onOnceAnHour()
   // Выполняется ежечасно
   Logger.log("Обрабатываем последние чеки");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const dDate0 = ss.getRangeByName('День1').getValue();
 
   let newBills = [];
 
   // Сканируем чеки в почте
   const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
-  const dLastMailDate = ReadLastDate(ss, rLastMailDate);
+  let dLastMailDate = rLastMailDate.getValue();
+  if (dLastMailDate === "") {
+    dLastMailDate = dDate0;
+    Logger.log("Принимаем дату последнего письма : " + dLastMailDate);
+  } else
+    Logger.log("Дата последнего письма : " + dLastMailDate);
   const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
 
   // Сканируем диск
   const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
-  const dLastDriveDate = ReadLastDate(ss, rLastDriveDate);
+  let dLastDriveDate = rLastDriveDate.getValue();
+  if (dLastDriveDate === "") {
+    dLastDriveDate = dDate0;
+    Logger.log("Принимаем дату последнего файла : " + dLastDriveDate);
+  } else
+    Logger.log("Дата последнего файла : " + dLastDriveDate);
   const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
 
   Logger.log("Обновляем " + newBills.length + " чеков.");
 
   Logger.log("Обновляем даты.");
+/*
+  if (newLastDriveDate > dLastDriveDate)
+    rLastDriveDate.setValue(newLastDriveDate);
+  if (newLastMailDate > dLastMailDate)
+    rLastMailDate.setValue(newLastMailDate);
+*/
 }
 
 function onOnceADay()
 {
   // Выполняется ежежневно
-  Logger.log("Закрываем день");
+  Logger.log("Сканируем поездки, покупки и закрываем день");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const Date0 = ss.getRangeByName('День1').getValue();
 
   let newBills = [];
 
   Logger.log("Сканируем покупки Ali");
   const rLastAliDate = ss.getRangeByName('ДатаЧекДиск');
-  const dLastAliDate = ReadLastDate(ss, rLastAliDate);
+  let dLastAliDate = rLastAliDate.getValue();
+  if (dLastAliDate === "") {
+    dLastAliDate = dDate0;
+    Logger.log("Принимаем дату последней покупки : " + dLastAliDate);
+  } else
+    Logger.log("Дата последней покупки : " + dLastAliDate);
   const newLastAliDate = ScanAli(ss, dLastAliDate, newBills);
 
   Logger.log("Сканируем поездки Uber");
   const rLastUberDate = ss.getRangeByName('ДатаЧекДиск');
-  const dLastUberDate = ReadLastDate(ss, rLastUberDate);
+  let dLastUberDate = rLastUberDate.getValue();
+  if (dLastUberDate === "") {
+    dLastUberDate = dDate0;
+    Logger.log("Принимаем дату последней покупки : " + dLastUberDate);
+  } else
+    Logger.log("Дата последней покупки : " + dLastUberDate);
   const newLastUberDate = ScanUber(ss, dLastUberDate, newBills);
 
   Logger.log("Обновляем " + newBills.length + " чеков.");
 
   Logger.log("Обновляем даты.");
+/*
+  if (newLastAliDate > dLastAliDate)
+    rLastAliDate.setValue(newLastAliDate);
+  if (newLastUberDate > dLastUberDate)
+    rLastUberDate.setValue(newLastUberDate);
+*/
 
   // Закрываем день.
   Logger.log("Закрываем день.");
+  const Hour0 = ss.getRangeByName('Час0').getValue(); // Время отсечения закрываемого дня
+  const Hours0 = Hour0.getHours();
+  const Minutes0 = Hour0.getMinutes();
+
+  const dd = 0;
+
+  let nowDate = new Date ();
+    nowDate.setDate(nowDate.getDate()-dd);
+  const prevDay = nowDate.getDate() - 1;
+  nowDate.setHours(0, 0, 0, 0); // Сегодняшняя дата 00:00
+  const nowDateTime = nowDate.getTime();
+  let prevDate = new Date ();
+    prevDate.setDate(prevDate.getDate()-dd);
+  prevDate.setHours(0, 0, 0, 0);
+  prevDate.setDate(prevDay); // Предыдущая дата
+  const prevDateTime = prevDate.getTime();
+
+  let CutOffDate = new Date ();
+    CutOffDate.setDate(CutOffDate.getDate()-dd);
+  CutOffDate.setHours(Hours0, Minutes0, 0, 0); // Полная дата отсечения закрываемого дня
+  const CutOffTime = CutOffDate.getTime(); // Время отсечения закрываемого дня
+  let prevCutOffDate = new Date ();
+    CutOffDate.setDate(CutOffDate.getDate()-dd);
+  prevCutOffDate.setDate(prevDay); // Полная дата отсечения дня предыдущего закрываемому
+  prevCutOffDate.setHours(Hours0, Minutes0, 0, 0);
+  const CutOffPrev = prevCutOffDate.getTime(); // Время отсечения дня предыдущего закрываемому
+
+  Logger.log("Час0: " + CutOffDate);
+  Logger.log("00:00 сегодня " + nowDate);
+  Logger.log("час0 вчера: " + prevCutOffDate);
+  Logger.log("00:00 вчера: " + prevDate);
+
+  const costs = ss.getSheetByName("Расходы");
+  // const costs = ss.getSheetByName("Лист17");
+  const costsData = costs.getDataRange();
+  const cdRows = costsData.getNumRows();
+
+  let lastNowTimeRow = 0; // Последняя строка сегодняшнего дня с указанным временем
+  let lastNowDayRow = 0; // Последняя строка сегодняшнего дня с пустым временем
+  let lastTimeRow = 0; // Последняя строка закрываемого дня с указанным временем
+  let lastDayRow = 0; // Последняя строка закрываемого дня с пустым временем
+  let firstTimePrevRow = 0; // Первая строка позапрошлого дня с указанным временем
+  let firstPrevPrevDayRow = 0; // Первая строка позапрошлого дня без указания времени
+
+  let thisDayRow = 0; // Первая строка Сегодня
+  let prevDayRow = 0; // Первая строка закрываемого дня
+  let oldDayRow = 0; // Последняя строка перед закрываемым днем
+  let isToday = true;
+
+  for (var i = 2; i < cdRows; i++) {
+    const cDate = costsData.getCell(i, 1);
+    const iDate = cDate.getValue();
+    if (iDate === '') {
+      thisDayRow = i;
+      continue;
+    }
+    // Нашли первую запись с датой
+    let iDateDayTime = iDate.getTime();
+    if (iDateDayTime < prevDateTime) {
+      firstPrevPrevDayRow = i;
+      oldDayRow = i;
+      break; // Курсор вышел в позавчера
+    }
+    const cTime = costsData.getCell(i, 2);
+    const iTime = cTime.getValue();
+    if (iTime === '') {
+      // Запись с датой без времени
+      if (iDateDayTime < nowDateTime) {
+        // Курсор опустился во вчера
+        prevDayRow = i;
+      } else if (isToday) {
+        // Курсор еще в сегодня
+        lastNowDayRow = i;
+        thisDayRow = i;
+      }
+    } else {
+      // Запись с датой и временем
+      const iTimeDayTime = iTime.getTime();
+      if (iTimeDayTime > CutOffPrev) {
+        if (iTimeDayTime > CutOffTime) {
+          // Курсор еще выше времени отсечения сегодня. Пока еще в сегодня
+          lastNowTimeRow = i;
+          thisDayRow = i;
+        } else {
+          // Курсор опустился ниже времени отсечения сегодня. Уже в закрываемом дне.
+          isToday = false;
+        }
+      } else {
+        firstTimePrevRow = i;
+        oldDayRow = i;
+        break; // Курсор вышел ниже времени отсечения вчера
+      }
+    }
+  }
+
+  let topRow = thisDayRow + 1;
+  Logger.log("Сегодня: " + thisDayRow + " вчера: " + prevDayRow + " позавчера: " + oldDayRow + " всего строк: " + (oldDayRow-topRow));
+  prevDayRow = oldDayRow - 1;
+
+  // Группируем строки дня
+  if (prevDayRow - thisDayRow > 1) {
+    let rDay = costs.getRange(topRow + 1, 1, prevDayRow - topRow, 10);
+    rDay.shiftRowGroupDepth(1);
+  }
+
+  // Суммируем расходы дня
+  let rSumm = costs.getRange(topRow, 10);
+  rSumm.setFormula("=SUM(C" + topRow + ":C" + prevDayRow + ")");
+
+  // Подчеркиваем снизу
+  let rPrevDay = costs.getRange(thisDayRow, 1, 1, 10);
+  rPrevDay.setBorder(null, null, true, null, null, null);
+
+  Logger.log("Закрыли день.")
+}
+
+function onOnceAMonth()
+{
+  // Закрываем месяц.
+  Logger.log("Закрываем месяц.");
 
 }

@@ -35,11 +35,11 @@ Total s1	<span class="value receipt-value-1020"	Итог:	<b>ИТОГ</b>	>ИТ�
 Total e1	</td>	</tr>	<!-- /ИТОГ -->	</tr>	</nobr>	
 Total s2	>	<span style=	<b> = <span>	<td class=	<span style=	
 Total e2	</span>	</span>	</span>	</td>	</span>	
-Cache pt	1	2	2	11	2	
-Cache s1	<span class="value receipt-value-1031	Наличные	>НАЛИЧНЫМИ<		>Наличными<	
-Cache e1	</td>	</tr>	</table>		</tr>	
-Cache s2	>	<span style=	<span style=		<td valign=	
-Cache e2	</span>	</span>	</span>		</td>	
+Cache pt	1	2	2	2	2	
+Cache s1	<span class="value receipt-value-1031	Наличные	>НАЛИЧНЫМИ<	>НАЛИЧНЫМИ:<	>Наличными<	
+Cache e1	</td>	</tr>	</table>	</tr>	</tr>	
+Cache s2	>	<span style=	<span style=	<td class=	<td valign=	
+Cache e2	</span>	</span>	</span>	</td>	</td>	
 FN pt	1	0	2	2	1	
 FN s1	<span class="value receipt-value-1041	ФН:	>N ФН<	>N ФН:<	аличными</td>	
 FN e1	</td>	<br	</table>	</tr>	<img src="cid:"/>	
