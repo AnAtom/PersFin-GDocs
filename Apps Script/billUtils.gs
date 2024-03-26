@@ -70,8 +70,9 @@ function billInfo(sBill)
   i = sBill.indexOf("\"dateTime\":")+12;
   const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
   const dDate = new Date(sDate);
+  const aDay = new Date(sDate.slice(0, sDate.indexOf("T")) + "T00:00:00");
   //SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Test").getRange(1,1).setValue(dDate);
-  //Logger.log( "дата "+ sDate +" data "+dDate);
+  //Logger.log( "дата ["+ sDate +"] data " + dDate + " день {" + ss + "} day " + aDay);
 
   // Наличные
   i = sBill.indexOf("\"cashTotalSum\":")+15;
@@ -84,7 +85,7 @@ function billInfo(sBill)
     .trim();
   const sShop = billFilterName(sName);
 
-  return {dTime: dDate.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
+  return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
 }
 
 // Возвращает информацию о чеке, включая список продуктов.

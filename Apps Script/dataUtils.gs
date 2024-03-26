@@ -5,7 +5,9 @@ findInRule(ruleName, s) - Поиск в списке выбора значени
 getMonthNum(sMonth, capitalLetter) - Возвращает номер месяца по названию.
 getMonthName(dDate) - Возвращает название месяца по дате
 GetGDriveFolderIdFromURL(rng) - Достает URL из Именованной ячейки таблицы.
-ReadLastDate(ss, rDate) - Читает дату из ячейки. Если ячейка пуста, то возвращает дату День1
+getShopInfoRemarkNote(sShop, sUser, lstStores, ssShop) - Возвращает Инфо-Примечание-Заметка для Магазина с листа Магазины или добавляет новый магазин на этот лист
+setCostBill(rSumm, bBill, arrInfoRemarkNote) - Выставляет в строке расходов информацию по чеку
+
 */
 
 // Поиск в именованном диапазоне. Возвращает индекс строки в списке занчений именованного диапазона или -1
@@ -132,16 +134,44 @@ function GetGDriveFolderIdFromURL(rng)
   return url.substring(39);
 }
 
-// Читает дату из ячейки. Если ячейка пуста, то возвращает дату День1.
-function ReadLastDate(ss, rDate)
+function getShopInfoRemarkNote(sShop, sUser, lstStores, lstIgnore, ssShop)
 {
-  let dLastDate = rDate.getValue();
-  const sLastDate = dLastDate.toString();
-  if (sLastDate == "") {
-    dLastDate = ss.getRangeByName('День1').getValue();
-    Logger.log("Принимаем дату последнего чека : " + dLastDate.toString());
-  } else
-    Logger.log("Дата последнего чека : " + sLastDate);
-  return dLastDate;
+  // Ищем магазин в списке
+  const shop = lstStores.find((element) => element[3] == sShop);
+  if (shop != undefined)
+    return shop; 
+
+  if (~lstIgnore.findIndex ((element) => element[0] == sShop))
+    return ["", "", ""];
+  // Добавляем в список новый магазин
+  Logger.log("Новый магазин [" + sShop + "] (" + sUser + ")");
+  const newRow = lstStores.getNumRows() + 4;
+  ssShop.insertRowBefore(newRow);
+  ssShop.getRange(newRow, 4, 1, 2).setValues([[sShop, sUser]]);
+  return ["", "", ""];
 }
 
+function setCostBill(rSumm, bBill, arrInfoRemarkNote)
+{
+  //
+  // Выставляем сумму покупки
+  rSumm
+  .setValue(bBill.summ)
+  .setNumberFormat("#,##0.00[$ ₽]");
+
+  // Выставляем дату покупки и получаем адрес ячейки с датой для выставления времени
+  const A1date = rSumm.offset(0,-2).setValue(bBill.date).setNumberFormat("dd.mm").getA1Notation();
+
+  // Выставляем время покупки
+  rSumm.offset(0,-1)
+  .setValue("=" + A1date)
+  .setNumberFormat("HH:mm");
+
+  // Если наличные, то выставляем счет списания
+  if (bBill.cash != 0)
+    rSumm.offset(0,1).setValue("Карман");
+
+  // Выставляем Статью, Инфо и Примечание для покупки
+  for (let i = 0; i < 3; i++)
+    rSumm.offset(0, 2 + i).setValue(arrInfoRemarkNote[i]);
+}
