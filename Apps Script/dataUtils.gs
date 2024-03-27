@@ -146,8 +146,9 @@ function getShopInfoRemarkNote(sShop, sUser, lstStores, lstIgnore, ssShop)
   // Добавляем в список новый магазин
   Logger.log("Новый магазин [" + sShop + "] (" + sUser + ")");
   const newRow = lstStores.getNumRows() + 4;
-  ssShop.insertRowBefore(newRow);
-  ssShop.getRange(newRow, 4, 1, 2).setValues([[sShop, sUser]]);
+  ssShop.insertRowBefore(newRow)
+        .getRange(newRow, 4, 1, 2)
+        .setValues([[sShop, sUser]]);
   return ["", "", ""];
 }
 
