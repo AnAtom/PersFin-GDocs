@@ -138,41 +138,46 @@ function getShopInfoRemarkNote(sShop, sUser, lstStores, lstIgnore, ssShop)
 {
   // Ищем магазин в списке
   const shop = lstStores.find((element) => element[3] == sShop);
-  if (shop != undefined)
-    return shop; 
+  if (shop != undefined) // Нашли.
+    return [shop[0], shop[1], shop[2]]; // Возвращаем Статья-Инфо-Примечание для этого магазина.
 
-  if (~lstIgnore.findIndex ((element) => element[0] == sShop))
-    return ["", "", ""];
-  // Добавляем в список новый магазин
+  const notFound = ["", "", ""];
+  // Не нашли в известных
+  if (~lstIgnore.findIndex((element) => element[0] == sShop)) // Нашли в игнорируемых
+    return notFound;
+
+  // Не нашли ни в известных, ни в игнорируемых. Добавляем в список новый магазин
   Logger.log("Новый магазин [" + sShop + "] (" + sUser + ")");
-  const newRow = lstStores.getNumRows() + 4;
+  const newRow = lstStores.length + 5;
   ssShop.insertRowBefore(newRow)
         .getRange(newRow, 4, 1, 2)
         .setValues([[sShop, sUser]]);
-  return ["", "", ""];
+  return notFound;
 }
 
 function setCostBill(rSumm, bBill, arrInfoRemarkNote)
 {
-  //
-  // Выставляем сумму покупки
-  rSumm
-  .setValue(bBill.summ)
-  .setNumberFormat("#,##0.00[$ ₽]");
-
-  // Выставляем дату покупки и получаем адрес ячейки с датой для выставления времени
-  const A1date = rSumm.offset(0,-2).setValue(bBill.date).setNumberFormat("dd.mm").getA1Notation();
+  // Выставляем сумму, Статья-Инфо-Примечание, дату и для времени покупки получаем адрес ячейки с датой
+  const A1date = rSumm
+    .setValue(bBill.summ) // Сумма
+    .setNumberFormat("#,##0.00[$ ₽]")
+    .offset(0, 2, 1, 3)
+    .setValues([arrInfoRemarkNote]) // Статья-Инфо-Примечание
+    .offset(0, -4, 1, 1)
+    .setValue(bBill.date) // Дата
+    .setNumberFormat("dd.mm")
+    .getA1Notation();
 
   // Выставляем время покупки
   rSumm.offset(0,-1)
-  .setValue("=" + A1date)
-  .setNumberFormat("HH:mm");
+    .setFormula("=" + A1date)
+    .setNumberFormat("HH:mm");
 
   // Если наличные, то выставляем счет списания
   if (bBill.cash != 0)
-    rSumm.offset(0,1).setValue("Карман");
+    rSumm.offset(0, 1).setValue("Карман");
 
   // Выставляем Статью, Инфо и Примечание для покупки
-  for (let i = 0; i < 3; i++)
-    rSumm.offset(0, 2 + i).setValue(arrInfoRemarkNote[i]);
+//  for (let i = 0; i < 3; i++)
+//    rSumm.offset(0, 2 + i).setValue(arrInfoRemarkNote[i]);
 }

@@ -100,10 +100,15 @@ function TestputBillsToExpenses()
 function TestSetBill () {
   //
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let br = ss.getSheetByName('Расходы').getRange(43, 8);
-  var jj = JSON.parse(br.getValue());
+  //let br = ss.getSheetByName('Расходы').getRange(32, 8);
+  let br = ss.getSheetByName('Расходы').getRange(32, 1, 1, 8);
+  let aa = ["d1", undefined, "s1", "счт", "ст", "инф", "прим", "зам"];
+  //var jj = JSON.parse(br.getValue());
   //Logger.log( " > " + jj.receipt.toString() + " <<< ");
-  Logger.log( " >>> " + JSON.stringify(jj) + " < ");
+  //Logger.log( " >>> " + JSON.stringify(jj) + " < ");
+  br.setValues([aa]);
+  let bb = br.getValues();
+  Logger.log(bb);
 
-  SettingCostBill(ss, br);
+  //SettingCostBill(ss, br);
 }
