@@ -17,31 +17,6 @@ onOnceAMonth()
 
 */
 
-// Типовые ежемесячные операции
-/*
-  Дата  Сумма   Счет        Цель        Операция        Тип
-  -     -       -           -           -               -
--	31.01																	Снятие					Оборот
--	30.01	0,00 ₽	Сбер										Проценты крдт		Списание
--	30.01	0,00 ₽	Сбер										Погашение крдт	Списание
--	30.01	0,00 ₽	Кредит ВТБ							Проценты крдт		Списание
--	30.01	0,00 ₽	ЗП					Кредит ВТБ	Погашение крдт	Списание
--	26.01	0,00 ₽	ЗП					Rostelecom	Платеж					Списание
-+	25.01	0,00 ₽	ЗП											Аванс						Начисление
--	23.01	0,00 ₽	ЗП					Комуналка		Платеж					Списание
--	22.01	0,00 ₽							Милана			Помог/подарил		Списание
--	19.01	0,00 ₽	ЗП					Квартира		Платеж					Списание
--	15.01	0,00 ₽	Кредит ВБРР							Проценты крдт		Списание
--	15.01	0,00 ₽	ВБРР				Кредит ВБРР	Погашение крдт	Списание
--	13.01	0,00 ₽	ЗП					ВБРР				Перевод					Оборот
--	15.01	0,00 ₽	МИР					Х5.Пакет		Платеж					Списание
--	11.01	0,00 ₽	МИР					Такие дела	Помог/подарил		Списание
-+	10.01	0,00 ₽	ЗП											ЗП							Начисление
--	10.01	0,00 ₽	МИР					Yota				Платеж					Списание
--	09.01	0,00 ₽	МИР					Я.Плюс			Платеж					Списание
--	01.01																	Снятие					Оборот
-*/
-
 function getUBERBillInfo(BillMail) {
   const sTripDate = BillMail.getSubject().slice(23);
   const spcPos = sTripDate.indexOf(" ");
@@ -466,6 +441,51 @@ function ScanUber(ss, dLastUberDate, arrBills)
   return dLastUberDate;
 }
 
+function onOpen(e)
+{
+  const ss = e.source;
+  // Сканируем чеки
+
+  const dDate0 = ss.getRangeByName('День1').getValue();
+  const newBills = [];
+
+  /*// Сканируем чеки в почте
+  const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
+  let dLastMailDate = rLastMailDate.getValue();
+  if (dLastMailDate === "") {
+    dLastMailDate = dDate0;
+    Logger.log("Принимаем дату последнего письма : " + dLastMailDate);
+  } else
+    Logger.log("Дата последнего письма : " + dLastMailDate);
+  const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
+
+  // Сканируем диск
+  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
+  let dLastDriveDate = rLastDriveDate.getValue();
+  if (dLastDriveDate === "") {
+    dLastDriveDate = dDate0;
+    Logger.log("Принимаем дату последнего файла : " + dLastDriveDate);
+  } else
+    Logger.log("Дата последнего файла : " + dLastDriveDate);
+  const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);*/
+
+  // Закрываем день, если предыдущий не закрыт
+  const CloseDay = ss.getRangeByName('ДеньЗакрыт');
+  // Закрываем месяц, если закрыли последний день
+
+  Logger.log('Добавляем пункты меню.');
+
+  const menuScan = [
+    {name: "Чеки UBER", functionName: 'MenuCheckUBER'},
+    {name: "Чеки Яндекс Go", functionName: 'MenuCheckYandexGo'},
+    {name: "Чеки AliExpress", functionName: 'MenuCheckAliExpress'},
+    null,
+    {name: "Очистить отладку", functionName: 'dbgClearTestSheet'}
+  ];
+  e.source.addMenu("Сканировать", menuScan);
+
+}
+
 function onEdit(e) 
 {
   const ss = e.source;
@@ -518,35 +538,6 @@ function onEdit(e)
   }
 }
 
-function onOpen(e)
-{
-  Logger.log('Добавляем пункты меню.');
-
-  const menuScan = [
-    {name: "Чеки UBER", functionName: 'MenuCheckUBER'},
-    {name: "Чеки Яндекс Go", functionName: 'MenuCheckYandexGo'},
-    {name: "Чеки AliExpress", functionName: 'MenuCheckAliExpress'},
-    null,
-    {name: "Очистить отладку", functionName: 'dbgClearTestSheet'}
-  ];
-  e.source.addMenu("Сканировать", menuScan);
-
-}
-
-function ShiftFirstBills(newBills, k)
-{
-  k++;
-  Logger.log("Вставили на лист " + k + " чеков. Удаляем эти чеки из найденных.");
-  newBills.splice(0, k);
-  const cnt = newBills.length;
-  if (cnt == 0) {
-    Logger.log("Все чеки обработаны.");
-    return true;
-  }
-  Logger.log("Осталось " + cnt + " чеков для обработки.");
-  return false;
-}
-
 function onOnceAnHour()
 {
   // Выполняется ежечасно
@@ -585,7 +576,6 @@ function onOnceAnHour()
 
   if (cntBills > 1)
     newBills.sort((a, b) => b.dTime - a.dTime); // Первым будет самый свежий чек
-
   let nowDayTime = newBills[0].tDate; // Первый день в списке чеков.
 
   const lstStores = ss.getRangeByName('СпскМагазины').getValues();
@@ -597,11 +587,8 @@ function onOnceAnHour()
 
   // dTime: getDate(sDate).getTime(), // UNIX время чека
   // tDate: // UNIX время дня чека
-  // date: sDate,
-  // summ: nSumm,
-  // cash: nCash,
-  // name: sName,
-  // shop: billFilterName(sName)};
+  // date: sDate,  summ: nSumm,  cash: nCash,
+  // name: sName,  shop: billFilterName(sName)};
 
   let firstDateSummRow = -1;
   for (let i = 2; i < cdRows; i++) {
@@ -619,7 +606,6 @@ function onOnceAnHour()
     let iDelBill = -1;
     const iSumm = costsData.getCell(i, 3).getValue();
     const isSumm = !(iSumm === '');
-    if (isSumm && !(~firstDateSummRow)) firstDateSummRow = i; // Запоминаем строку (если еще не запомнили) чтобы потом вставить чеки перед ней
     const iTime = costsData.getCell(i, 2).getValue();
     const isTime = !(iTime === '');
     const isPrevDay = iDateDayTime < nowDayTime;
@@ -636,8 +622,8 @@ function onOnceAnHour()
       } else { // Указано время. Не указана сумма. Ищем чек с таким временем.
         iDelBill = newBills.findIndex((bill) => bill.dTime == iDateDayTime);
         if (~iDelBill) { // Нашли чек с таким временем. Обновляем строку
-          setCostBill(costs.getRange(i, 3), newBills[k], getShopInfoRemarkNote(newBills[k].shop, newBills[k].name, lstStores, lstIgnore, shops));
-          Logger.log('... В строке ' + i + ' Нашли чек с датой ' + iDate + ' Обновляем сумму ' + newBills[k].summ);
+          setCostBill(costs.getRange(i, 3), newBills[iDelBill], getShopInfoRemarkNote(newBills[iDelBill].shop, newBills[iDelBill].name, lstStores, lstIgnore, shops));
+          Logger.log('... В строке ' + i + ' Нашли чек с датой ' + iDate + ' Обновляем сумму ' + newBills[iDelBill].summ);
           costs.getRange(i, 15).setValue("updated");
           iInsrtBill = iDelBill-1;
         } else { // Не нашли чек с таким временем. Ищем все чеки старше для вставки
@@ -648,13 +634,14 @@ function onOnceAnHour()
       }
     else // Не указано время
       if (isSumm) {
+        if (!(~firstDateSummRow)) firstDateSummRow = i; // Запоминаем строку (если еще не запомнили) чтобы потом вставить чеки перед ней
         if (isPrevDay)
           iDelBill = newBills.findIndex((bill) => bill.summ == iSumm && bill.tDate == iDateDayTime); // Ищем вчера
         else
           iDelBill = newBills.findIndex((bill) => bill.summ == iSumm && bill.tDate == nowDayTime); // Ищем сегодня
         if (~iDelBill) { // Нашли чек с этой суммой в соответствующий день для обновления времени
-          setCostBill(costs.getRange(i, 3), newBills[k], getShopInfoRemarkNote(newBills[k].shop, newBills[k].name, lstStores, lstIgnore, shops));
-          Logger.log('... В строке ' + i + ' Нашли чек с суммой ' + iSumm + ' Обновляем дату ' + newBills[k].date);
+          setCostBill(costs.getRange(i, 3), newBills[iDelBill], getShopInfoRemarkNote(newBills[iDelBill].shop, newBills[iDelBill].name, lstStores, lstIgnore, shops));
+          Logger.log('... В строке ' + i + ' Нашли чек с суммой ' + iSumm + ' Обновляем дату ' + newBills[iDelBill].date);
           costs.getRange(i, 15).setValue("updated");
           iInsrtBill = iDelBill-1;
         } else { // Не нашли чек с этой суммой
@@ -685,12 +672,12 @@ function onOnceAnHour()
     // Удаляем обработанные чеки
     if (~iDelBill) {
       if (iDelBill == 0) {
-        Logger.log('XXX Удаляем чек с датой ' + newBills[0].date + ' и суммой ' + newBills[0].summ);
+        Logger.log('XXX Удаляем чек с суммой ' + newBills[0].summ + ' и датой ' + newBills[0].date);
         newBills.shift();
       } else {
         const lastDellBill = newBills[iDelBill];
         iDelBill += 1;
-        Logger.log('XXX Удвляем ' + iDelBill + ' чеков. Последний с суммой ' + lastDellBill.date + ' от ' + lastDellBill.summ);
+        Logger.log('XXX Удвляем ' + iDelBill + ' чеков. Последний с суммой ' + lastDellBill.summ + ' от ' + lastDellBill.date);
         newBills.splice(0, iDelBill);
       }
       if (newBills.length == 0) {
@@ -708,8 +695,6 @@ function onOnceAnHour()
   if (newBills.length > 0)
     Logger.log(">>>>>>>>>> !!! " + newBills.length + "!!! <<<<<<<<<<");
   Logger.log("Пробежались по чекам на листе. В списке найденных осталось :" + newBills.length);
-
-//return;
 
   Logger.log("Обновляем даты.");
   if (newLastDriveDate > dLastDriveDate)
@@ -777,10 +762,8 @@ function onOnceADay()
   prevCutOffDate.setDate(prevDay); // Полная дата отсечения дня предыдущего закрываемому
   const CutOffPrev = prevCutOffDate.setHours(Hours0, Minutes0, 0, 0);
 
-  Logger.log("Час0 сегодня: " + CutOffDate);
-  Logger.log("00:00 сегодня: " + nowDate);
-  Logger.log("час0 вчера: " + prevCutOffDate);
-  Logger.log("00:00 вчера: " + prevDate);
+  Logger.log("Час0 сегодня: " + CutOffDate + " --- 00:00 сегодня: " + nowDate);
+  Logger.log("Час0 вчера: " + prevCutOffDate + " --- 00:00 вчера: " + prevDate);
 
   const costs = ss.getSheetByName("Расходы");
   const costsData = costs.getDataRange();

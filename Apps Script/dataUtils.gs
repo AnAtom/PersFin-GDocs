@@ -148,7 +148,7 @@ function getShopInfoRemarkNote(sShop, sUser, lstStores, lstIgnore, ssShop)
 
   // Не нашли ни в известных, ни в игнорируемых. Добавляем в список новый магазин
   Logger.log("Новый магазин [" + sShop + "] (" + sUser + ")");
-  const newRow = lstStores.length + 5;
+  const newRow = lstStores.length + 4;
   ssShop.insertRowBefore(newRow)
         .getRange(newRow, 4, 1, 2)
         .setValues([[sShop, sUser]]);
@@ -176,8 +176,4 @@ function setCostBill(rSumm, bBill, arrInfoRemarkNote)
   // Если наличные, то выставляем счет списания
   if (bBill.cash != 0)
     rSumm.offset(0, 1).setValue("Карман");
-
-  // Выставляем Статью, Инфо и Примечание для покупки
-//  for (let i = 0; i < 3; i++)
-//    rSumm.offset(0, 2 + i).setValue(arrInfoRemarkNote[i]);
 }
