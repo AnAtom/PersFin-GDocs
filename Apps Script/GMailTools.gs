@@ -4,7 +4,6 @@ mailGetThreadByRngName - возвращает цепочки писем из м�
 CutByTemplate - вырезает значение из сообщения по шаблону
 mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
 GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
-ScanMail - читает чеки из новых писем
 
 */
 
@@ -157,58 +156,55 @@ function GetTemplates(rTemplates)
   return Tmplts;
 }
 
-function ScanMail(ss, dLastMailDate, arrBills)
-{
-  // Читаем шаблоны для сканера
-  const eTmplts = GetTemplates(ss.getRangeByName('ШаблоныЧеков'));
+/* Яндекс
 
-  let newLastMailDate = dLastMailDate;
-  let NumBills = 0;
-  let bBill = {};
+[{"_id":"6713afe1b206204a5ff995a3","createdAt":"2024-10-19T13:10:57+00:00","ticket":{"document":{"receipt":
+{"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
 
-  // Сканируем цепочки писем
-  let thrd = 1;
-  const mailThreads = mailGetThreadByRngName('ЧекиПочта');
-  for (messages of mailThreads) {
-    if (!messages.getLastMessageDate() > dLastMailDate)
-      continue;
+"dateTime":"2024-10-19T03:15:00",
+"ecashTotalSum":55400,
+"fiscalDocumentFormatVer":4,"fiscalDocumentNumber":211161,"fiscalDriveNumber":"7386440800040048","fiscalSign":3663930572,
 
-    let m = 0;
-    for (message of messages.getMessages()) {
-      const dDate = message.getDate();
-      if (dDate > dLastMailDate) {
-        if (dDate > newLastMailDate)
-          newLastMailDate = dDate;
-      } else
-        continue;
+"fnsUrl":"www.nalog.gov.ru","internetSign":1,
 
-      const sBody = message.getBody();
-      const sFrom = message.getFrom();
-      let mFrom = sFrom;
-      if (~sFrom.indexOf("<"))
-        mFrom = between(sFrom, "<", ">");
-      const theTmplt = eTmplts.find((element) => element.from == mFrom);
-      if (theTmplt == undefined)
-      {
-        Logger.log(">>> !!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо [" + sBody.length + "] от " + dDate.toISOString() + " >>> ");
-        // ss.getSheetByName('DBG').getRange(1, 1).setValue(sBody);
-        continue;
-      }
+"items":[
+  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":55400,"productType":1,"providerInn":"504207820709","quantity":1,"sum":55400}
 
-      Logger.log( "Письмо " + thrd + "#" + ++m + " от " + dDate.toISOString() + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + sFrom + " ." );
+],"kktRegId":"0000840607026308    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":55400,"operationType":1,"prepaidSum":0,
 
-      //try {
-        bBill = mailGenericGetInfo(theTmplt, sBody);
-      /*} catch (err) {
-        Logger.log(">>> !!! Ошибка чтения чека из письма.", err);
-        continue;
-      }*/
-      arrBills.push(bBill);
-      Logger.log("Чек N " + ++NumBills + dbgBillInfo(bBill));
-    } // Письма в цепочке
-    thrd++;
-  } // Цепочки писем
+"properties":{"propertyName":"psp_payment_id","propertyValue":"payment_c9698b303b9347af89dfdb36bb4da522|authorization_0000"},
+"propertiesData":"ws:CICTKBVPRB","provisionSum":0,"requestNumber":877,"retailPlace":"taxi.yandex.ru",
+"retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@go.yandex.com","shiftNumber":233,"taxationType":1,"appliedTaxationType":1,
 
-  Logger.log("Считано " + NumBills + " новых чеков. Последнее письмо от " + newLastMailDate.toISOString());
-  return newLastMailDate;
-}
+"totalSum":55400,
+"user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}}}}]
+
+*/
+
+/* UBER
+
+[{"_id":"673190cc8359dbbcb6c3f179","createdAt":"2024-11-11T05:06:20+00:00","ticket":{"document":{"receipt":
+{"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
+
+"dateTime":"2024-11-10T06:19:00",
+"ecashTotalSum":101200,
+"fiscalDocumentFormatVer":4,"fiscalDocumentNumber":136327,"fiscalDriveNumber":"7380440801186965","fiscalSign":744264270,
+
+"fnsUrl":"www.nalog.gov.ru","internetSign":1,
+
+"items":[
+
+  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":101200,"productType":1,"providerInn":"051302118203","quantity":1,"sum":101200}
+
+],"kktRegId":"0000840547059265    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":101200,"operationType":1,"prepaidSum":0,
+
+"properties":{"propertyName":"psp_payment_id","propertyValue":"payment_3f8aa5a15e89465680f9510986ad40fd|authorization_0000"},
+"propertiesData":"ws:CNUJGVSRPH","provisionSum":0,"requestNumber":968,"retailPlace":"https://support-uber.com",
+"retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@support-uber.com","shiftNumber":137,"taxationType":1,"appliedTaxationType":1,
+
+"totalSum":101200,
+"user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}
+
+}}}]
+
+*/

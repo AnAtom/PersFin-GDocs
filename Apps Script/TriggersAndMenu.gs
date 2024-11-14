@@ -44,10 +44,14 @@ function MenuCheckUBER() {
   const flgDbg = dbgGetDbgFlag(true);
   const sTest = ss.getSheetByName("Test"); // Лист для отладки
 
-  let k = 1;
+  const sUberLabel = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getRangeByName("ЧекиUBER")
+    .getValue();
   const threads = GmailApp
-    .getUserLabelByName("Моё/Мани/Такси")
+    .getUserLabelByName(sUberLabel)
     .getThreads();
+  let k = 1;
   for (var i = 0; i < threads.length; i++) {
     Logger.log(threads[i].getFirstMessageSubject());
     var messages = threads[i].getMessages();
@@ -57,6 +61,7 @@ function MenuCheckUBER() {
       const bInfo = getUBERBillInfo(message);
       if (flgDbg)
       {
+        sTest.getRange(k, 1).setValue(message.getBody());
         sTest.getRange(k, 2).setValue(bInfo.summ);
         sTest.getRange(k, 3).setValue(bInfo.date);
       }
@@ -82,8 +87,14 @@ function getYandexGoBillInfo(BillMail) {
   let fBody = BillMail.getBody();
   // finLib.between2();
 
-  var TripTime = between2(fBody, "route__point-name", "</td>", "<p class=", "</p>");
-  var j = TripTime.indexOf(">");
+  //var TripTime = between2(fBody, "route__point-name", "</td>", "<p class=", "</p>");
+  //var j = TripTime.indexOf(">");
+  var TripTime = between(fBody, "route__point-name", "</table>");
+  //Logger.log("Yandex Go>>>" + TripTime + "<<<");
+  var j = TripTime.indexOf("route__point-name");
+  TripTime = TripTime.slice(j+1);
+  TripTime = between(TripTime, "<p class=", "</p>");
+  j = TripTime.indexOf(">");
   TripTime = TripTime.slice(j+1).trim();
 
   var TripDateTime = TripDate + " " + TripTime;
@@ -101,10 +112,14 @@ function MenuCheckYandexGo() {
   const flgDbg = dbgGetDbgFlag(true);
   const sTest = ss.getSheetByName("Test"); // Лист для отладки
 
-  let k = 1;
-
-  const threads = GmailApp.getUserLabelByName("pers/отчеты/такси").getThreads();
+  const sYandexGoLabel = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getRangeByName("ЧекиЯндексGo")
+    .getValue();
+  const threads = GmailApp.getUserLabelByName(sYandexGoLabel).getThreads();
   // if (flgDbg) SpreadsheetApp.getActive().toast(threads.length);
+
+  let k = 1;
 
   for (var i = 0; i < threads.length; i++) {
     Logger.log(threads[i].getFirstMessageSubject());
@@ -112,7 +127,6 @@ function MenuCheckYandexGo() {
     for (var j = 0; j < messages.length; j++) {
       var message = messages[j];
       Logger.log( j + " > " + message.getSubject());
-      if (flgDbg) sTest.getRange(k, 1).setValue(message.getBody());
 
       var bInfo = getYandexGoBillInfo(message);
 
@@ -120,6 +134,8 @@ function MenuCheckYandexGo() {
       {
         sTest.getRange(k, 2).setValue(bInfo.summ);
         sTest.getRange(k, 3).setValue(bInfo.date);
+        sTest.getRange(k, 4).setValue(message.getBody().length);
+        sTest.getRange(k, 1).setValue(message.getBody());
       }
       k++;
     } // Сообщения с чеками Яндекс Go
@@ -134,7 +150,7 @@ function getAliExpressBillInfo(BillMail) {
 function MenuCheckAliExpress() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  var flgDbg = dbgGetDbgFlag(true);
+  const flgDbg = dbgGetDbgFlag(true);
   
   // Лист для отладки
   var sTest = ss.getSheetByName("Test");
@@ -156,7 +172,10 @@ function MenuCheckAliExpress() {
         Logger.log( j + " > " + subject + " [[[ "+ Body.length.toString() +" ]]]");
 
         if (flgDbg) rTest.offset(k, 0).setValue(" > " + subject + " [[[ "+ Body.length.toString() +" ]]]"); 
-        if (flgDbg) dbgLongMailBody(rTest.offset(k, 1), Body);
+        if (flgDbg) {
+          let s = dbgSplitLongString(Body, 4950);
+          rTest.offset(k, 1, 1, s.length). setValues([s]);
+        }
                 
         //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
         var bInfo = getAliExpressBillInfo(message);
@@ -169,8 +188,12 @@ function MenuCheckAliExpress() {
         Logger.log( j + " > " + subject + " <<< "+ Body.length.toString() +" >>>");
 
         if (flgDbg) rTest.offset(k, 0).setValue(" # " + subject + " <<< "+ Body.length.toString() +" >>>"); 
-        if (flgDbg) dbgLongMailBody(rTest.offset(k, 1), Body);
-                
+        if (flgDbg) {
+          //dbgSplitLongString(rTest.offset(k, 1), Body);
+          let s = dbgSplitLongString(Body, 49500);
+          rTest.offset(k, 1, 1, s.length). setValues([s]);
+        }
+
         //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
         var bInfo = getAliExpressBillInfo(message);
 
@@ -256,9 +279,7 @@ function SettingCostInfo(ss, br)
 
   if (flgDbg)
   {
-    // Лист для отладки
-    const sTest = ss.getSheetByName('Test');
-    const rTest = sTest.getRange(1, 1);
+    var rTest = ss.getSheetByName('Test').getRange(1, 1);
   }
   //br.setNote('Test :' + sTest + ' Range :' + rTest.getNumRows());
 
@@ -413,23 +434,27 @@ function ScanAli(ss, dLastAliDate, arrBills)
         continue;
 
       const sBody = message.getBody();
-      const mFrom = between(message.getFrom(), "<", ">");
+      const mFrom = message.getFrom();
       Logger.log( "Письмо " + thrd + "#" + ++m + " от " + dDate.toISOString() + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + mFrom + " ." );
 
       bBill = {dTime: dDate.getTime(), date: dDate.toISOString(), summ: 0, cash: 0, name: "a", shop: "A"}
       /*try {
+        Оформлен			17-04-2024, 19:13 UTC
+        Сумма заказа	1396.24 ₽
+        Номер заказа	5353566416757566
+
         bBill = mailGenericGetInfo(theTmplt, sBody);
       } catch (err) {
         Logger.log(">>> !!! Ошибка чтения чека из письма.", err);
         continue;
       }*/
       arrBills.push(bBill);
-      Logger.log("Чек N " + ++NumBills + dbgBillInfo(bBill));
+      Logger.log("Покупка N " + ++NumBills + dbgBillInfo(bBill));
     } // Письма в цепочке
     thrd++;
   } // Цепочки писем
 
-  Logger.log("Считано " + NumBills + " новых чеков. Последнее письмо от " + newLastAliDate.toISOString());
+  Logger.log("Считано " + NumBills + " новых покупок. Последнее письмо от " + newLastAliDate.toISOString());
 
   return newLastAliDate;
 }
@@ -437,44 +462,59 @@ function ScanAli(ss, dLastAliDate, arrBills)
 function ScanUber(ss, dLastUberDate, arrBills)
 {
   // Раз в день сканируем поездки Uber
+  let newLastUberDate = dLastUberDate;
+  let NumBills = 0;
+  let bBill = {};
 
-  return dLastUberDate;
+  // Сканируем цепочки писем
+  let thrd = 1;
+  const mailThreads = mailGetThreadByRngName('ЧекиUBER');
+  for (messages of mailThreads) {
+    if (!messages.getLastMessageDate() > dLastUberDate)
+      continue;
+
+    let m = 0;
+    for (message of messages.getMessages()) {
+      const dDate = message.getDate();
+      if (dDate > dLastUberDate) {
+        if (dDate > newLastUberDate)
+          newLastUberDate = dDate;
+      } else
+        continue;
+
+      const sBody = message.getBody();
+      const mFrom = message.getFrom();
+      Logger.log( "Письмо " + thrd + "#" + ++m + " от " + dDate.toISOString() + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + mFrom + " ." );
+
+      bBill = {dTime: dDate.getTime(), date: dDate.toISOString(), summ: 0, cash: 0, name: "u", shop: "U"}
+      /*try {
+                {"cashTotalSum":0,"dateTime":"2024-04-14T01:17:00",
+                "fiscalDriveNumber":7281440701497667,"fiscalDocumentNumber":186536,"fiscalSign":4139559977,
+                "items":[
+                          {"name":"Перевозка пассажиров и багажа","price":94100,"quantity":1,"sum":94100,"unit":""}],
+                "totalSum":94100,"user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":0}
+
+          route__time
+          check__price
+
+        bBill = mailGenericGetInfo(theTmplt, sBody);
+      } catch (err) {
+        Logger.log(">>> !!! Ошибка чтения чека из письма.", err);
+        continue;
+      }*/
+      arrBills.push(bBill);
+      Logger.log("Покупка N " + ++NumBills + dbgBillInfo(bBill));
+    } // Письма в цепочке
+    thrd++;
+  } // Цепочки писем
+
+  Logger.log("Считано " + NumBills + " новых поездок. Последнее письмо от " + newLastUberDate.toISOString());
+
+  return newLastUberDate;
 }
 
 function onOpen(e)
 {
-  const ss = e.source;
-  // Сканируем чеки
-
-  const dDate0 = ss.getRangeByName('День1').getValue();
-  const newBills = [];
-
-  /*// Сканируем чеки в почте
-  const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
-  let dLastMailDate = rLastMailDate.getValue();
-  if (dLastMailDate === "") {
-    dLastMailDate = dDate0;
-    Logger.log("Принимаем дату последнего письма : " + dLastMailDate);
-  } else
-    Logger.log("Дата последнего письма : " + dLastMailDate);
-  const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
-
-  // Сканируем диск
-  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
-  let dLastDriveDate = rLastDriveDate.getValue();
-  if (dLastDriveDate === "") {
-    dLastDriveDate = dDate0;
-    Logger.log("Принимаем дату последнего файла : " + dLastDriveDate);
-  } else
-    Logger.log("Дата последнего файла : " + dLastDriveDate);
-  const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);*/
-
-  // Закрываем день, если предыдущий не закрыт
-  const CloseDay = ss.getRangeByName('ДеньЗакрыт');
-  // Закрываем месяц, если закрыли последний день
-
-  Logger.log('Добавляем пункты меню.');
-
   const menuScan = [
     {name: "Чеки UBER", functionName: 'MenuCheckUBER'},
     {name: "Чеки Яндекс Go", functionName: 'MenuCheckYandexGo'},
@@ -482,19 +522,21 @@ function onOpen(e)
     null,
     {name: "Очистить отладку", functionName: 'dbgClearTestSheet'}
   ];
+  Logger.log('Добавляем пункты меню.');
   e.source.addMenu("Сканировать", menuScan);
-
 }
 
 function onEdit(e) 
 {
   const ss = e.source;
-
+  Logger.log("Редактирование на листе <" + ss.getActiveSheet().getSheetName() + ">");
   // Читаем флаг "Использовать автосписки"
   let br = ss.getRangeByName('ФлАвтосписки');
   if (br == undefined || ! br.getValue()) return;
 
   br = e.range;
+  Logger.log("<" + br + ">");
+  Logger.log(">" + br.getA1Notation() + "<");
   if (br.getNumColumns() > 1) // Скопировали диапазон
     return;
 
@@ -535,6 +577,11 @@ function onEdit(e)
           SettingCostBill(ss, br);
           return;
       }
+    case 'i':
+      if (ncol == 8 && br.getRow() == 23) {
+        Logger.log("Переключаем сохранение чеков.");
+        //
+      }
   }
 }
 
@@ -547,16 +594,6 @@ function onOnceAnHour()
 
   let newBills = [];
 
-  // Сканируем чеки в почте
-  const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
-  let dLastMailDate = rLastMailDate.getValue();
-  if (dLastMailDate === "") {
-    dLastMailDate = dDate0;
-    Logger.log("Принимаем дату последнего письма : " + dLastMailDate);
-  } else
-    Logger.log("Дата последнего письма : " + dLastMailDate);
-  const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
-
   // Сканируем диск
   const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
   let dLastDriveDate = rLastDriveDate.getValue();
@@ -566,6 +603,16 @@ function onOnceAnHour()
   } else
     Logger.log("Дата последнего файла : " + dLastDriveDate);
   const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
+
+  // Сканируем чеки в почте
+  const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
+  let dLastMailDate = rLastMailDate.getValue();
+  if (dLastMailDate === "") {
+    dLastMailDate = dDate0;
+    Logger.log("Принимаем дату последнего письма : " + dLastMailDate);
+  } else
+    Logger.log("Дата последнего письма : " + dLastMailDate);
+  const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
 
   const cntBills = newBills.length;
   if (cntBills == 0) {
@@ -582,6 +629,7 @@ function onOnceAnHour()
   const lstIgnore = ss.getRangeByName('спскМагзныИгнор').getValues();
   const shops = ss.getSheetByName('Магазины');
   const costs = ss.getSheetByName("Расходы");
+  //const costs = ss.getSheetByName('Расходы (Тест)'); 
   const costsData = costs.getDataRange();
   let cdRows = costsData.getNumRows();
 
@@ -606,6 +654,7 @@ function onOnceAnHour()
     let iDelBill = -1;
     const iSumm = costsData.getCell(i, 3).getValue();
     const isSumm = !(iSumm === '');
+    //if (isSumm && !(~firstDateSummRow)) firstDateSummRow = i; // Запоминаем строку (если еще не запомнили) чтобы потом вставить чеки перед ней
     const iTime = costsData.getCell(i, 2).getValue();
     const isTime = !(iTime === '');
     const isPrevDay = iDateDayTime < nowDayTime;
@@ -663,7 +712,7 @@ function onOnceAnHour()
       iInsrtBill += 1;
       if (!(~firstDateSummRow)) firstDateSummRow = i; // Если небыло запомненной строки, то вставляем перед этой
       Logger.log('<<< Вставляем ' + iInsrtBill + ' чеков перед строкой ' + firstDateSummRow);
-      costs.insertRowsBefore(firstDateSummRow, iInsrtBill);
+      costs.insertRowsAfter(firstDateSummRow - 1, iInsrtBill);
       for (let j = 0; j < iInsrtBill; j++)
         setCostBill(costs.getRange(firstDateSummRow + j, 3), newBills[j], getShopInfoRemarkNote(newBills[j].shop, newBills[j].name, lstStores, lstIgnore, shops));
       i += iInsrtBill;
@@ -710,10 +759,23 @@ function onOnceADay()
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const Date0 = ss.getRangeByName('День1').getValue();
 
+  onOnceAnHour();
   let newBills = [];
 
+  // Сканируем в почте такси UBER - ЧекиUBER - ДатаЧекUber
+  const rLastUberDate = ss.getRangeByName('ДатаЧекUber');
+  ScanMailLabel("ЧекиUBER", rLastUberDate, ScanUberMail, newBills);
+
+  // Сканируем в почте такси Яндекс Go - ЧекиЯндексGo - ДатаЧекиЯндексGo
+  const rLastYandexGoDate = ss.getRangeByName('ДатаЧекиЯндексGo');
+  ScanMailLabel("ЧекиЯндексGo", rLastYandexGoDate, ScanYandexGoMail, newBills);
+
+  // Сканируем в почте покупки Ali - ЧекиAli - ДатаЧекAli
+  const rLastAliDate = ss.getRangeByName('ДатаЧекAli');
+  ScanMailLabel("ЧекиAli", rLastAliDate, ScanAliMail, newBills);
+
   Logger.log("Сканируем покупки Ali");
-  const rLastAliDate = ss.getRangeByName('ДатаЧекДиск');
+  //const rLastAliDate = ss.getRangeByName('ДатаЧекAli');
   let dLastAliDate = rLastAliDate.getValue();
   if (dLastAliDate === "") {
     dLastAliDate = dDate0;
@@ -723,7 +785,7 @@ function onOnceADay()
   const newLastAliDate = ScanAli(ss, dLastAliDate, newBills);
 
   Logger.log("Сканируем поездки Uber");
-  const rLastUberDate = ss.getRangeByName('ДатаЧекДиск');
+  //const rLastUberDate = ss.getRangeByName('ДатаЧекUber');
   let dLastUberDate = rLastUberDate.getValue();
   if (dLastUberDate === "") {
     dLastUberDate = dDate0;
@@ -853,11 +915,12 @@ function onOnceAMonth()
 {
   // Закрываем месяц.
   Logger.log("Закрываем месяц.");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   const costs = ss.getSheetByName("Расходы");
 
   let thisMonthRow = 26;
   // Подчеркиваем снизу
   const rThisMonth = costs.getRange(thisMonthRow, 1, 1, 11);
-  rThisMonth.setBorder(null, null, true, null, null, null, null, SpreadsheetApp.BorderStyle.DOUBLE);
+  //rThisMonth.setBorder(null, null, true, null, null, null, null, SpreadsheetApp.BorderStyle.DOUBLE);
 
 }

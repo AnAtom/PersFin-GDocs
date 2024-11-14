@@ -67,10 +67,11 @@ function TestEditCell()
 {
   //
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const br = ss.getSheetByName("Расходы").getRange(31,8,1,1);
+  const br = ss.getSheetByName("Расходы").getRange(34,5,1,1);
   const sv = br.getValues(); 
   const s = br.getValue();
-  SettingCostBill(ss, br);
+  SettingCostInfo(ss, br);
+  //SettingCostBill(ss, br);
 }
 
 function TestBInfo(){
