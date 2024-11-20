@@ -9,6 +9,63 @@ ScanAli
 
 */
 
+class MailLabelScaner {
+
+  constructor(sName) {
+    this.sName = sName;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    const NameLabel = ss
+      .getRangeByName('Чеки' + sName)
+      .getValue();
+    Logger.log('Читаем [' + sName + '] из метки ' + NameLabel);
+    this.mailThread = GmailApp
+      .getUserLabelByName(NameLabel)
+      .getThreads();
+    Logger.log('Для [' + sName + '] в метке ' + NameLabel + ' ' + this.mailThread.length + ' цепочек.');
+
+    this.newDate = ss.getRangeByName('День1').getValue();
+    this.rLastDate = ss.getRangeByName('ДатаЧек' + sName);
+    this.dLastDate = this.rLastDate.getValue();
+    if (this.dLastDate === '') {
+      this.dLastDate = this.newDate;
+      Logger.log('Принимаем последнюю дату для [' + sName + '] : ' + this.dLastDate);
+    } else
+      Logger.log('Последняя дата для [' + sName + '] : ' + this.dLastDate);
+  }
+
+  doScan(readBill, arrBills) {
+    let mURL = '';
+    let newBill = {};
+    for (const messages of this.mailThread) {
+      if (messages.getLastMessageDate() > this.dLastDate)
+        mURL = messages.getPermalink();
+      else
+        continue;
+      let m = 0;
+      for (const message of messages.getMessages()) {
+        const dDate = message.getDate();
+        if (dDate > this.dLastDate) {
+          if (dDate > this.newDate)
+            this.newDate = dDate;
+        } else
+          continue;
+
+        newBill = readBill(message);
+        arrBills.push(newBill);
+      }
+    }
+  }
+
+  updateDate() {
+    if (this.newDate > this.dLastDate) {
+      Logger.log('Новая последняя дата для [' + this.sName + '] : ' + this.dLastDate);
+      this.rLastDate.setValue(this.newDate);
+    }
+  }
+
+}
+
 function ScanDrive(ss, dLastDriveDate, arrBills)
 {
   // Читаем папку, в которой собраны чеки, из ячейки ЧекиДиск
@@ -130,77 +187,4 @@ function GetMailBill(mailBody)
   */
 
   //return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
-}
-
-function ScanUberMail(sBody)
-{
-  //
-}
-
-function ScanYandexGoMail(sBody)
-{
-  //
-}
-
-function ScanAliMail(sBody)
-{
-  //
-}
-
-function ScanMailLabel(sLabelName, rLastDate, scanFunc, arrBills)
-{
-  var dLastMailDate = rLastDate.getValue();
-  var newLastMailDate = dLastMailDate;
-
-  // Сканируем цепочки писем
-  const mailThreads = GmailApp.getUserLabelByName(sLabelName).getThreads();
-  if (mailThreads == null) {
-    Logger.log('В почте нет метки "' + sLabelName + '"');
-    return [];
-  }
-  var newBill;
-  let thrd = 1;
-  let mURL = "";
-  for (messages of mailThreads) {
-    if (messages.getLastMessageDate() > dLastMailDate)
-      mURL = messages.getPermalink();
-    else
-      continue;
-    let m = 0;
-    for (message of messages.getMessages()) {
-      const dDate = message.getDate();
-      if (dDate > dLastMailDate) {
-        if (dDate > newLastMailDate)
-          newLastMailDate = dDate;
-      } else
-        continue;
-
-      const sBody = message.getBody();
-      newBill = scanFunc(sBody);
-      arrBills.push(newBill);
-    }
-  }
-
-  if (newLastMailDate > dLastMailDate)
-    rLastDate.setValue(newLastMailDate);
-}
-
-function ScanTaxi(ss, dLastTaxiDate, arrBills)
-{
-  let newLastTaxiDate = dLastTaxiDate;
-  let NumBills = 0;
-  let bBill = {};
-
-  const rLastMailDate = ss.getRangeByName('ДатаЧекиUBER');
-  ScanMailLabel("Моё/Такси/Uber", rLastMailDate, GetMailBill)
-  Logger.log("Считано " + NumBills + " новых поездок. Последняя поездка от " + newLastTaxiDate.toISOString());
-  return newLastTaxiDate;
-}
-
-function TestScan()
-{
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  //
-  ScanTaxi(ss, "", []);
-  Logger.log("Тест пройден. ");
 }

@@ -33,6 +33,22 @@ billAllInfo(sBill) - Возвращает информацию о чеке, вк
 
 }}}] */
 
+// Заполняет в покупке поля dTime, tDate, date
+function billDate(sDate) {
+  var dDate;
+  var i = sDate.indexOf("T");
+  if (~i) {
+    dDate = new Date(sDate);
+  } else {
+    dDate = Date.parse(sDate);
+    Logger.log( "дата ["+ sDate +"] data " + dDate.toISOString());
+    sDate = dDate.toISOString();
+    i = sDate.indexOf("T");
+  }
+  const aDay = new Date(sDate.slice(0, i) + "T00:00:00");
+  return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate};
+}
+
 // Выделяет из названия организации конкретено название
 function billFilterName(sName)
 {
@@ -69,23 +85,30 @@ function billInfo(sBill)
   // Дата
   i = sBill.indexOf("\"dateTime\":")+12;
   const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
-  const dDate = new Date(sDate);
-  const aDay = new Date(sDate.slice(0, sDate.indexOf("T")) + "T00:00:00");
+  let aBill = billDate(sDate);
+  //const dDate = new Date(sDate);
+  //const aDay = new Date(sDate.slice(0, sDate.indexOf("T")) + "T00:00:00");
   //SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Test").getRange(1,1).setValue(dDate);
   //Logger.log( "дата ["+ sDate +"] data " + dDate + " день {" + ss + "} day " + aDay);
 
   // Наличные
   i = sBill.indexOf("\"cashTotalSum\":")+15;
   const iCash = parseInt(sBill.slice(i, sBill.indexOf(",", i)));
+  aBill.cash = iCash / 100.0;
 
   // Магазин
   i = sBill.indexOf("\"user\":\"")+8;
   const sName = sBill.slice(i, sBill.indexOf("\",", i+1))
     .replace(/\\\"/g,"\"")
     .trim();
-  const sShop = billFilterName(sName);
+  aBill.name = sName;
 
-  return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
+  const sShop = billFilterName(sName);
+  aBill.shop = sShop;
+
+  aBill.summ = iSumm / 100.0;
+  return aBill;
+  //return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
 }
 
 // Возвращает информацию о чеке, включая список продуктов.

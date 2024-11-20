@@ -2,6 +2,7 @@
 
 findInRange(rangeName, s) - Поиск в именованном диапазоне.
 findInRule(ruleName, s) - Поиск в списке выбора значения именованного диапазона.
+getDateRangeDefault(rangeName) - Возвращает именованный диапазон с датой. Если дата пуста, то подставляет День1
 getMonthNum(sMonth, capitalLetter) - Возвращает номер месяца по названию.
 getMonthName(dDate) - Возвращает название месяца по дате
 GetGDriveFolderIdFromURL(rng) - Достает URL из Именованной ячейки таблицы.
@@ -38,6 +39,20 @@ function findInRule(ruleName, s)
       return i;
 
   return -1;
+}
+
+// Возвращает именованный диапазон с датой. Если дата пуста, то подставляет День1
+function getDateRangeDefault(rangeName)
+{
+  const ss = SpreadsheetApp.getActiveSpreadsheet()
+  const r = ss.getRangeByName(rangeName);
+  let d = r.getValue();
+  if (d === "") {
+    const Date0 = ss.getRangeByName('День1').getValue();
+    Logger.log('Последняя дата "' + rangeName + '" не определена. Принимаем дату : ' + Date0);
+    r.setValue(Date0);
+  }
+  return r;
 }
 
 // Присваивает ячейке именованный список значений из именованной ячейки

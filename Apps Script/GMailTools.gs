@@ -4,6 +4,7 @@ mailGetThreadByRngName - возвращает цепочки писем из м�
 CutByTemplate - вырезает значение из сообщения по шаблону
 mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
 GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
+ScanMail - читает чеки из новых писем
 
 */
 
@@ -181,6 +182,36 @@ function GetTemplates(rTemplates)
 
 */
 
+function billYandexGo(eMail) {
+  const sTripDate = eMail.getSubject().slice(28);
+  const spcPos = sTripDate.indexOf(" ");
+  const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
+  const sDate = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2)) + '-'
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)) + '-'
+    + sTripDate.slice(0, spcPos);
+
+  const fBody = eMail.getBody();
+
+  var TripTime = between(fBody, "route__point-name", "</table>");
+  //Logger.log("Yandex Go>>>" + TripTime + "<<<");
+  var j = TripTime.indexOf("route__point-name");
+  TripTime = TripTime.slice(j+1);
+  TripTime = between(TripTime, "<p class=", "</p>");
+  j = TripTime.indexOf(">");
+  TripTime = TripTime.slice(j+1).trim();
+
+  const TripDateTime = sDate + "T" + TripTime;
+  let aBill = billDate(TripDateTime);
+
+  const TripSumm = between2(fBody, "report__value_main", "</td>", ">", " ₽").trim();
+  //
+  aBill.summ = TripSumm;
+  aBill.cash = 0.0;
+  aBill.name = 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"';
+  aBill.shop = 'ЯНДЕКС.ТАКСИ';
+  return aBill;
+}
+
 /* UBER
 
 [{"_id":"673190cc8359dbbcb6c3f179","createdAt":"2024-11-11T05:06:20+00:00","ticket":{"document":{"receipt":
@@ -208,3 +239,71 @@ function GetTemplates(rTemplates)
 }}}]
 
 */
+
+function billUBER(eMail) {
+  const sTripDate = eMail.getSubject().slice(23);
+  const spcPos = sTripDate.indexOf(" ");
+  const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
+  const TripDate = sTripDate.slice(0, spcPos) + "."
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)) + "."
+    + sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2));
+
+  const sDate = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2)) + '-'
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)) + '-'
+    + sTripDate.slice(0, spcPos);
+
+  const fBody = eMail.getBody();
+
+  let TripTime = between2(fBody, "From", "</tr>", "<td align", "</td>");
+  TripTime = TripTime.slice(TripTime.indexOf(">")+1).trim();
+
+  const TripDateTime = sDate + "T" + TripTime;
+  let aBill = billDate(TripDateTime);
+
+  const TripSumm = between2(fBody, "check__price", "</td>", ">", " ₽").trim();
+  //
+  aBill.summ = TripSumm;
+  aBill.cash = 0.0;
+  aBill.name = 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"';
+  aBill.shop = 'ЯНДЕКС.ТАКСИ';
+  return aBill;
+  //return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: 0.0, name: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"', shop: 'ЯНДЕКС.ТАКСИ'};
+}
+
+/*
+
+  const sDate = getDateByTemplate(email, mailTmplt.date);
+  const sd = "20" + sDate.slice(6, 8)  // Год
+    + "-" + sDate.slice(3, 5)         // месяц
+    + "-" + sDate.slice(0, 2)         // день
+
+  const tDate = new Date(sd + "T" + sDate.slice(9)); // Дата чека
+  const tDay = new Date(sd + "T00:00:00"); // Дата дня чека
+
+  // Logger.log( "дата ["+ sd + "T" + sDate.slice(9) +"] data " + tDate + " день {" + sd + "T00:00:00" + "} day " + tDay);
+
+  return {
+
+dTime: tDate.getTime(), 
+
+tDate: tDay.getTime(), 
+
+date: sDate, 
+
+summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
+
+"dateTime":"2024-11-18T22:05:00"
+
+  const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
+  const dDate = new Date(sDate);
+  const aDay = new Date(sDate.slice(0, sDate.indexOf("T")) + "T00:00:00");
+  
+*/
+
+//  return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
+//  return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
+
+function billAli(eMail) {
+  //
+}
+
