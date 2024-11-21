@@ -1,35 +1,35 @@
 /* 
 
-billFilterName(sName) - Вырезает название магазина и возвращает в верхнем регистре.
-billInfo(sBill) - Возвращает Дату, Сумму и Магазин чека из json строки.
+ billDate(sDate) - Возвращает время даты, время дня и строковую дату (dTime, tDate, date) по строке даты.
+ billFilterName(sName) - Вырезает название магазина и возвращает в верхнем регистре.
+ billInfo(sBill) - Возвращает Дату (dTime, tDate, date), Сумму и Магазин чека из json строки.
 
-billAllInfo(sBill) - Возвращает информацию о чеке, включая список продуктов.
+ billAllInfo(sBill) - Возвращает информацию о чеке, включая список продуктов.
 
 */
 
-// JSON нового формата
+/* JSON нового формата
+  [{"_id":"65b01a0cae17240837f960c2","createdAt":"2024-01-23T19:57:00+00:00","ticket":{"document":{"receipt":
 
-/* [{"_id":"65b01a0cae17240837f960c2","createdAt":"2024-01-23T19:57:00+00:00","ticket":{"document":{"receipt":
+  {"cashTotalSum":0,"code":3,"creditSum":0,
+  "dateTime":"2024-01-23T22:58:00","ecashTotalSum":169000,"fiscalDocumentFormatVer":2,
+  "fiscalDocumentNumber":2266,              ФД
+  "fiscalDriveNumber":"7282440700394281",   ФН
+  "fiscalSign":6132709,                     ФПД
 
-{"cashTotalSum":0,"code":3,"creditSum":0,
-"dateTime":"2024-01-23T22:58:00","ecashTotalSum":169000,"fiscalDocumentFormatVer":2,
-"fiscalDocumentNumber":2266,              ФД
-"fiscalDriveNumber":"7282440700394281",   ФН
-"fiscalSign":6132709,                     ФПД
+  "items":[
+    {"name":"ОПЯТА Светлое 0,5","nds":6,"paymentType":4,"price":25000,"productType":1,"quantity":1,"sum":25000},
+    {
+      "name":"ГИННЕС 0,5","nds":6,"paymentType":4,
+      "price":139800,"productType":1,"productCodeDataError":"not supported product type 5",
+      "quantity":0.5,
+      "sum":69900
+      },
+    {"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000}
+  ],"kktRegId":"0001538015044333    ","ndsNo":169000,"operationType":1,"operator":"Елисеева Вика","prepaidSum":0,"provisionSum":0,"requestNumber":22,"retailPlace":"ресторан","shiftNumber":74,"taxationType":16,"appliedTaxationType":16,
 
-"items":[
-{"name":"ОПЯТА Светлое 0,5","nds":6,"paymentType":4,"price":25000,"productType":1,"quantity":1,"sum":25000},
-{
-  "name":"ГИННЕС 0,5","nds":6,"paymentType":4,
-  "price":139800,"productType":1,"productCodeDataError":"not supported product type 5",
-  "quantity":0.5,
-  "sum":69900
-},
-{"name":"Негрони","nds":6,"paymentType":4,"price":47000,"productType":1,"quantity":2,"sum":94000}
-],"kktRegId":"0001538015044333    ","ndsNo":169000,"operationType":1,"operator":"Елисеева Вика","prepaidSum":0,"provisionSum":0,"requestNumber":22,"retailPlace":"ресторан","shiftNumber":74,"taxationType":16,"appliedTaxationType":16,
-
-"totalSum":169000,
-"user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"НИКО\"","userInn":"7724009233  "}
+  "totalSum":169000,
+  "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"НИКО\"","userInn":"7724009233  "}
 
 }}}] */
 

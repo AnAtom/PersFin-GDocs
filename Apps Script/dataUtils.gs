@@ -1,13 +1,13 @@
 /*
 
-findInRange(rangeName, s) - Поиск в именованном диапазоне.
-findInRule(ruleName, s) - Поиск в списке выбора значения именованного диапазона.
-getDateRangeDefault(rangeName) - Возвращает именованный диапазон с датой. Если дата пуста, то подставляет День1
-getMonthNum(sMonth, capitalLetter) - Возвращает номер месяца по названию.
-getMonthName(dDate) - Возвращает название месяца по дате
-GetGDriveFolderIdFromURL(rng) - Достает URL из Именованной ячейки таблицы.
-getShopInfoRemarkNote(sShop, sUser, lstStores, ssShop) - Возвращает Инфо-Примечание-Заметка для Магазина с листа Магазины или добавляет новый магазин на этот лист
-setCostBill(rSumm, bBill, arrInfoRemarkNote) - Выставляет в строке расходов информацию по чеку
+ findInRange(rangeName, s) - Поиск в именованном диапазоне.
+ findInRule(ruleName, s) - Поиск в списке выбора значения именованного диапазона.
+ getDateRangeDefault(rangeName) - Возвращает именованный диапазон с датой. Если дата пуста, то подставляет День1
+ getMonthNum(sMonth, capitalLetter) - Возвращает номер месяца по названию.
+ getMonthName(dDate) - Возвращает название месяца по дате
+ GetGDriveFolderIdFromURL(rng) - Достает URL из Именованной ячейки таблицы.
+ getShopInfoRemarkNote(sShop, sUser, lstStores, ssShop) - Возвращает Инфо-Примечание-Заметка для Магазина с листа Магазины или добавляет новый магазин на этот лист
+ setCostBill(rSumm, bBill, arrInfoRemarkNote) - Выставляет в строке расходов информацию по чеку
 
 */
 

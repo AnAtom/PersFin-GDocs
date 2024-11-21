@@ -1,15 +1,14 @@
 /*
 
-dbgGetDbgFlag(clearTest) - Возвращает значение флага ФлОтладка. Если true и аргумент true, то очищает лист Test.
-dbgClearTestSheet() - Очищает и активирует лист Test.
-dbgSplitLongString(sStr, maxLngth) - Разбивает длинную строку на набор строк длиной maxLngth.
-dbgBillInfo(bBill) - Формирует строку с информацией о чеке для логирования.
+ dbgGetDbgFlag(clearTest) - Возвращает значение флага ФлОтладка. Если true и аргумент true, то очищает лист Test.
+ dbgClearTestSheet() - Очищает и активирует лист Test.
+ dbgSplitLongString(sStr, maxLngth) - Разбивает длинную строку на набор строк длиной maxLngth.
+ dbgBillInfo(bBill) - Формирует строку с информацией о чеке для логирования.
 
 */
 
 // 
-function dbgGetDbgFlag(clearTest)
-{
+function dbgGetDbgFlag(clearTest) {
   const Spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const Range = Spreadsheet.getRangeByName('ФлОтладка');
 
@@ -24,8 +23,7 @@ function dbgGetDbgFlag(clearTest)
 }
 
 // Очистка листа отладки
-function dbgClearTestSheet()
-{
+function dbgClearTestSheet() {
   SpreadsheetApp
   .getActiveSpreadsheet()
   .getSheetByName('Test')
@@ -34,8 +32,7 @@ function dbgClearTestSheet()
 }
 
 // Разбиваем длинную строку ( >50000 ) на несколько строк по maxLngth символов
-function dbgSplitLongString(sStr, maxLngth)
-{
+function dbgSplitLongString(sStr, maxLngth) {
   let n = 0;
   let k = maxLngth;
   let sArr = [];
@@ -48,8 +45,7 @@ function dbgSplitLongString(sStr, maxLngth)
   return sArr;
 }
 
-function dbgBillInfo(bBill)
-{
+function dbgBillInfo(bBill) {
   const s =
     " от (" + bBill.date +
     ") магазин >" + bBill.name +
@@ -63,8 +59,7 @@ function dbgBillInfo(bBill)
 }
 
 // Отладка вставки чека на листе Расходы
-function TestEditCell()
-{
+function TestEditCell() {
   //
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const br = ss.getSheetByName("Расходы").getRange(34,5,1,1);
@@ -74,7 +69,7 @@ function TestEditCell()
   //SettingCostBill(ss, br);
 }
 
-function TestBInfo(){
+function TestBInfo() {
   //
   const s = '{"cashTotalSum":0,"dateTime":"2024-03-08T18:58:00","fiscalDriveNumber":9960440503269952,"fiscalDocumentNumber":65146,"fiscalSign":25409474,"items":[{"name":"[М+] Вода СВЯТОЙ ИСТОЧНИК б/г   1.5л","price":4999,"quantity":1,"sum":4999,"unit":"шт."},{"name":"Пакет ПЯТЕРОЧКА 65х40см","price":849,"quantity":1,"sum":849,"unit":"шт."},{"name":"[М+] Вода СВЯТОЙ ИСТОЧНИК б/г   1.5л","price":4999,"quantity":1,"sum":4999,"unit":"шт."},{"name":"[М+] Вода СВЯТОЙ ИСТОЧНИК б/г   1.5л","price":4999,"quantity":1,"sum":4999,"unit":"шт."},{"name":"Яйцо СЕЛЯНОЧКА кур.С0 10шт","price":13499,"quantity":1,"sum":13499,"unit":"шт."}],"totalSum":54340,"user":"ООО \"Агроторг\"","userInn":"5036045205  "}';
   const b = billInfo(s);

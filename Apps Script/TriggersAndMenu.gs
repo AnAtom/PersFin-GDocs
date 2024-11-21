@@ -1,16 +1,16 @@
 /*
 
-onOpen(e)
-onEdit(e)
-onOnceAnHour()
-onOnceADay()
-onOnceAMonth()
+ onOpen(e)
+ onEdit(e)
+ onOnceAnHour()
+ onOnceADay()
+ onOnceAMonth()
 
-Редактирование на листе «Операции»
+ Редактирование на листе «Операции»
   SettingTrnctnName - Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
   SettingTrnctnType - Устанавливаем доступный список операций для выбранного Типа операции
 
-Редактирование на листе «Расходы»
+ Редактирование на листе «Расходы»
   SettingCostInfo - Изменилась статья расходов, устанавливаем список расходов (Инфо)
   SettingCostNote - Изменился пункт статьи расходов (Инфо), устанавливаем список для Примечание
   SettingCostBill - Изменилась Заметка (парсим чек)
@@ -18,24 +18,24 @@ onOnceAMonth()
 */
 
 /* UBER
-{"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
+ {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
 
-"dateTime":"2024-11-10T06:19:00",
-"ecashTotalSum":101200,
-"fiscalDocumentFormatVer":4,"fiscalDocumentNumber":136327,"fiscalDriveNumber":"7380440801186965","fiscalSign":744264270,
+ "dateTime":"2024-11-10T06:19:00",
+ "ecashTotalSum":101200,
+ "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":136327,"fiscalDriveNumber":"7380440801186965","fiscalSign":744264270,
 
-"fnsUrl":"www.nalog.gov.ru","internetSign":1,
+ "fnsUrl":"www.nalog.gov.ru","internetSign":1,
 
-"items":[
+ "items":[
   {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":101200,"productType":1,"providerInn":"051302118203","quantity":1,"sum":101200}
 
-],"kktRegId":"0000840547059265    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":101200,"operationType":1,"prepaidSum":0,
-"properties":{"propertyName":"psp_payment_id","propertyValue":"payment_3f8aa5a15e89465680f9510986ad40fd|authorization_0000"},
-"propertiesData":"ws:CNUJGVSRPH","provisionSum":0,"requestNumber":968,"retailPlace":"https://support-uber.com",
-"retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@support-uber.com","shiftNumber":137,"taxationType":1,"appliedTaxationType":1,
+ ],"kktRegId":"0000840547059265    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":101200,"operationType":1,"prepaidSum":0,
+ "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_3f8aa5a15e89465680f9510986ad40fd|authorization_0000"},
+ "propertiesData":"ws:CNUJGVSRPH","provisionSum":0,"requestNumber":968,"retailPlace":"https://support-uber.com",
+ "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@support-uber.com","shiftNumber":137,"taxationType":1,"appliedTaxationType":1,
 
-"totalSum":101200,
-"user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}
+ "totalSum":101200,
+ "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}
 */
 
 function getUBERBillInfo(BillMail) {
@@ -92,23 +92,23 @@ function MenuCheckUBER() {
 }
 
 /* Яндекс
-{"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
+ {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
 
-"dateTime":"2024-10-19T03:15:00",
-"ecashTotalSum":55400,
-"fiscalDocumentFormatVer":4,"fiscalDocumentNumber":211161,"fiscalDriveNumber":"7386440800040048","fiscalSign":3663930572,
+ "dateTime":"2024-10-19T03:15:00",
+ "ecashTotalSum":55400,
+ "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":211161,"fiscalDriveNumber":"7386440800040048","fiscalSign":3663930572,
 
-"fnsUrl":"www.nalog.gov.ru","internetSign":1,
-"items":[
+ "fnsUrl":"www.nalog.gov.ru","internetSign":1,
+ "items":[
   {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":55400,"productType":1,"providerInn":"504207820709","quantity":1,"sum":55400}
 
-],"kktRegId":"0000840607026308    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":55400,"operationType":1,"prepaidSum":0,
-"properties":{"propertyName":"psp_payment_id","propertyValue":"payment_c9698b303b9347af89dfdb36bb4da522|authorization_0000"},
-"propertiesData":"ws:CICTKBVPRB","provisionSum":0,"requestNumber":877,"retailPlace":"taxi.yandex.ru",
-"retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@go.yandex.com","shiftNumber":233,"taxationType":1,"appliedTaxationType":1,
+ ],"kktRegId":"0000840607026308    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":55400,"operationType":1,"prepaidSum":0,
+ "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_c9698b303b9347af89dfdb36bb4da522|authorization_0000"},
+ "propertiesData":"ws:CICTKBVPRB","provisionSum":0,"requestNumber":877,"retailPlace":"taxi.yandex.ru",
+ "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@go.yandex.com","shiftNumber":233,"taxationType":1,"appliedTaxationType":1,
 
-"totalSum":55400,
-"user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}
+ "totalSum":55400,
+ "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}
 */
 
 function getYandexGoBillInfo(BillMail) {
@@ -245,8 +245,7 @@ function MenuCheckAliExpress() {
 }
 
 // Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
-function SettingTrnctnName(ss, br)
-{
+function SettingTrnctnName(ss, br) {
   const NewVal = br.getValue();
   const OpAcc = br.offset(0,-2); // Счет
   const OpTrgt = br.offset(0,-1); // Цель
@@ -304,8 +303,7 @@ function SettingTrnctnName(ss, br)
 }
 
 // Устанавливаем соответствующий список операций для выбранного Типа операции
-function SettingTrnctnType(ss, br)
-{
+function SettingTrnctnType(ss, br) {
   const NewVal = br.getValue();
   if (ss.getRangeByName(NewVal) == undefined)
     NewVal = 'Операция'; // Устанавливаем полный список операций для выбора если Тип неизвестен
@@ -314,8 +312,7 @@ function SettingTrnctnType(ss, br)
 }
 
 // Устанавливаем список расходов для выбранной статьи расходов
-function SettingCostInfo(ss, br)
-{
+function SettingCostInfo(ss, br) {
   const flgDbg = dbgGetDbgFlag(false);
 
   if (flgDbg)
@@ -350,8 +347,7 @@ function SettingCostInfo(ss, br)
 }
 
 // Устанавливаем список информации для выбранного расхода
-function SettingCostNote(ss, br)
-{
+function SettingCostNote(ss, br) {
   const flgDbg = dbgGetDbgFlag(false);
   
   if (flgDbg)
@@ -386,8 +382,7 @@ function SettingCostNote(ss, br)
 }
 
 // Читаем информацию о чеке из json строки
-function SettingCostBill(ss, br)
-{
+function SettingCostBill(ss, br) {
   const flgDbg = dbgGetDbgFlag(false);
 
   if (flgDbg)
@@ -451,8 +446,7 @@ function SettingCostBill(ss, br)
       br.offset(0,i-3).setValue(shop[i]);
 }
 
-function ScanAli(ss, dLastAliDate, arrBills)
-{
+function ScanAli(ss, dLastAliDate, arrBills) {
   // Раз в день сканируем заказы AliExpress
   let newLastAliDate = dLastAliDate;
   let NumBills = 0;
@@ -500,8 +494,7 @@ function ScanAli(ss, dLastAliDate, arrBills)
   return newLastAliDate;
 }
 
-function ScanUber(ss, dLastUberDate, arrBills)
-{
+function ScanUber(ss, dLastUberDate, arrBills) {
   // Раз в день сканируем поездки Uber
   let newLastUberDate = dLastUberDate;
   let NumBills = 0;
@@ -554,8 +547,7 @@ function ScanUber(ss, dLastUberDate, arrBills)
   return newLastUberDate;
 }
 
-function onOpen(e)
-{
+function onOpen(e) {
   const menuScan = [
     {name: "Чеки UBER", functionName: 'MenuCheckUBER'},
     {name: "Чеки Яндекс Go", functionName: 'MenuCheckYandexGo'},
@@ -567,8 +559,7 @@ function onOpen(e)
   e.source.addMenu("Сканировать", menuScan);
 }
 
-function onEdit(e) 
-{
+function onEdit(e) {
   const ss = e.source;
   Logger.log("Редактирование на листе <" + ss.getActiveSheet().getSheetName() + ">");
   // Читаем флаг "Использовать автосписки"
@@ -626,8 +617,7 @@ function onEdit(e)
   }
 }
 
-function onOnceAnHour()
-{
+function onOnceAnHour() {
   // Выполняется ежечасно
   Logger.log("Обрабатываем последние чеки");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -660,11 +650,11 @@ function onOnceAnHour()
 
   // Сканируем поездки UBER
   const billsUBER = new MailLabelScaner('Uber');
-  //billsUBER.doScan(billUBER, newBills);
+  billsUBER.doScan(billUBER, newBills);
 
   // Сканируем поездки Яндекс Go
   const billsYandexGo = new MailLabelScaner('ЯндексGo');
-  //billsYandexGo.doScan(billYandexGo, newBills);
+  billsYandexGo.doScan(billYandexGo, newBills);
 
   const cntBills = newBills.length;
   if (cntBills == 0) {
@@ -778,7 +768,7 @@ function onOnceAnHour()
       } else {
         const lastDellBill = newBills[iDelBill];
         iDelBill += 1;
-        Logger.log('XXX Удвляем ' + iDelBill + ' чеков. Последний с суммой ' + lastDellBill.summ + ' от ' + lastDellBill.date);
+        Logger.log('XXX Удаляем ' + iDelBill + ' чеков. Последний с суммой ' + lastDellBill.summ + ' от ' + lastDellBill.date);
         newBills.splice(0, iDelBill);
       }
       if (newBills.length == 0) {
@@ -806,8 +796,7 @@ function onOnceAnHour()
   //billsYandexGo.updateDate();
 }
 
-function onOnceADay()
-{
+function onOnceADay() {
   // Выполняется ежежневно
   Logger.log("Сканируем поездки, покупки и закрываем день");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -817,13 +806,13 @@ function onOnceADay()
   let newBills = [];
 
   // Сканируем в почте такси UBER - ЧекиUBER - ДатаЧекUber
-  ScanMailLabel(ss.getRangeByName("ЧекиUber").getValue(), getDateRangeDefault('ДатаЧекUber'), ScanUberMail, newBills);
+  //ScanMailLabel(ss.getRangeByName("ЧекиUber").getValue(), getDateRangeDefault('ДатаЧекUber'), ScanUberMail, newBills);
 
   // Сканируем в почте такси Яндекс Go - ЧекиЯндексGo - ДатаЧекЯндексGo
-  ScanMailLabel(ss.getRangeByName("ЧекиЯндексGo").getValue(), getDateRangeDefault('ДатаЧекЯндексGo'), ScanYandexGoMail, newBills);
+  //ScanMailLabel(ss.getRangeByName("ЧекиЯндексGo").getValue(), getDateRangeDefault('ДатаЧекЯндексGo'), ScanYandexGoMail, newBills);
 
   // Сканируем в почте покупки Ali - ЧекиAli - ДатаЧекAli
-  ScanMailLabel(ss.getRangeByName("ЧекиAli").getValue(), getDateRangeDefault('ДатаЧекAli'), ScanAliMail, newBills);
+  //ScanMailLabel(ss.getRangeByName("ЧекиAli").getValue(), getDateRangeDefault('ДатаЧекAli'), ScanAliMail, newBills);
 
   Logger.log("Сканируем покупки Ali");
   const rLastAliDate = ss.getRangeByName('ДатаЧекAli');
@@ -848,12 +837,12 @@ function onOnceADay()
   Logger.log("Обновляем " + newBills.length + " чеков.");
 
   Logger.log("Обновляем даты.");
-/*
+ /*
   if (newLastAliDate > dLastAliDate)
     rLastAliDate.setValue(newLastAliDate);
   if (newLastUberDate > dLastUberDate)
     rLastUberDate.setValue(newLastUberDate);
-*/
+ */
 
   // Закрываем день.
   Logger.log("Закрываем день.");
@@ -962,8 +951,7 @@ function onOnceADay()
   Logger.log("Закрыли день.")
 }
 
-function onOnceAMonth()
-{
+function onOnceAMonth() {
   // Закрываем месяц.
   Logger.log("Закрываем месяц.");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
