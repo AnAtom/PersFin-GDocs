@@ -78,24 +78,35 @@ function mailGenericGetInfo(mailTmplt, email) {
     sName = cutOuterQuotes(sName);
 
   const sDate = getDateByTemplate(email, mailTmplt.date);
-  const sd = "20" + sDate.slice(6, 8)  // Год
+  const isoDate = "20" + sDate.slice(6, 8)  // Год
     + "-" + sDate.slice(3, 5)         // месяц
     + "-" + sDate.slice(0, 2)         // день
-  const tDate = new Date(sd + "T" + sDate.slice(9)); // Дата чека
-  const tDay = new Date(sd + "T00:00:00"); // Дата дня чека
+  
+  const isoDateTime = isoDate + "T" + sDate.slice(9);
+  let aBill = billDate(isoDateTime);
+
+  //const tDate = new Date(sd + "T" + sDate.slice(9)); // Дата чека
+  //const tDay = new Date(sd + "T00:00:00"); // Дата дня чека
   // Logger.log( "дата ["+ sd + "T" + sDate.slice(9) +"] data " + tDate + " день {" + sd + "T00:00:00" + "} day " + tDay);
 
   const nSumm = CutByTemplate(email, mailTmplt.total).replace(/\s/g,'').replace(",", ".") * 1.0;
+  aBill.summ = nSumm;
 
   let nCash = CutByTemplate(email, mailTmplt.cash);
   if (nCash === "") nCash = 0;
   else nCash = nCash * 1.0;
+  aBill.cash = nCash;
  /*
   const iFN = parseInt(CutByTemplate(email, mailTmplt.fn));
   const iFD = parseInt(CutByTemplate(email, mailTmplt.fd));
   const iFP = parseInt(CutByTemplate(email, mailTmplt.fp));
  */
-  return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
+
+  aBill.name = sName;
+  aBill.shop = billFilterName(sName);
+
+  return aBill;
+  //return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
 }
 
 /* Структура шаблона
@@ -182,8 +193,8 @@ function billYandexGo(eMail) {
   const spcPos = sTripDate.indexOf(" ");
   const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
   const sDate = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2)) + '-'
-    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)) + '-'
-    + sTripDate.slice(0, spcPos);
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)).toString().padStart(2, '0') + '-'
+    + sTripDate.slice(0, spcPos).padStart(2, '0');
 
   const fBody = eMail.getBody();
 
@@ -239,13 +250,10 @@ function billUBER(eMail) {
   const sTripDate = eMail.getSubject().slice(23);
   const spcPos = sTripDate.indexOf(" ");
   const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
-  const TripDate = sTripDate.slice(0, spcPos) + "."
-    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)) + "."
-    + sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2));
 
   const sDate = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2)) + '-'
-    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)) + '-'
-    + sTripDate.slice(0, spcPos);
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)).toString().padStart(2, '0') + '-'
+    + sTripDate.slice(0, spcPos).padStart(2, '0');
 
   const fBody = eMail.getBody();
 

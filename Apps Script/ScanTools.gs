@@ -69,7 +69,7 @@ class MailLabelScaner extends BillScaner {
           newBill = readBill(message);
           if (newBill != null) {
             bc++;
-            //arrBills.push(newBill);
+            arrBills.push(newBill);
           }
           mc++;
         }
