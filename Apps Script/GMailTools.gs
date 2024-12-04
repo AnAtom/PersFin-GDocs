@@ -1,23 +1,11 @@
 /*
 
- mailGetThreadByRngName - возвращает цепочки писем из метки
  CutByTemplate - вырезает значение из сообщения по шаблону
  mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
  GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
  ScanMail - читает чеки из новых писем
 
 */
-
-function mailGetThreadByRngName(rName) {
-  // Возвращает цепочки писем из метки
-  const sLabel = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getRangeByName(rName)
-    .getValue();
-  Logger.log("Читаем из почты с меткой: " + sLabel);
-
-  return GmailApp.getUserLabelByName(sLabel).getThreads();
-}
 
 function CutByTemplate(str, tmplt) {
   switch(tmplt.pt) {
@@ -85,10 +73,6 @@ function mailGenericGetInfo(mailTmplt, email) {
   const isoDateTime = isoDate + "T" + sDate.slice(9);
   let aBill = billDate(isoDateTime);
 
-  //const tDate = new Date(sd + "T" + sDate.slice(9)); // Дата чека
-  //const tDay = new Date(sd + "T00:00:00"); // Дата дня чека
-  // Logger.log( "дата ["+ sd + "T" + sDate.slice(9) +"] data " + tDate + " день {" + sd + "T00:00:00" + "} day " + tDay);
-
   const nSumm = CutByTemplate(email, mailTmplt.total).replace(/\s/g,'').replace(",", ".") * 1.0;
   aBill.summ = nSumm;
 
@@ -152,14 +136,9 @@ function GetTemplates(rTemplates) {
       date: tDate,
       total: tTotal,
       cash: tCash
- /*
-      fn: tFN,
-      fd: tFD,
-      fp: tFP,
- */
+ //     fn: tFN, fd: tFD, fp: tFP
     });
   }
-  Logger.log("Загружено " + Tmplts.length + " шаблонов.");
   return Tmplts;
 }
 

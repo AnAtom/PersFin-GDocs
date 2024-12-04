@@ -25,14 +25,16 @@ class BillScaner {
 
   updateDate() {
     if (this.newDate > this.dLastDate) {
-      this.doLog('Обновляем последнюю дату : ' + this.dLastDate);
+      this.doLog('Обновляем последнюю дату : ' + this.newDate);
       this.rLastDate.setValue(this.newDate);
-    }
+    } else
+      this.doLog('Дата не изменилась.');
   }
 
   doLog(msg) {
     Logger.log('> Сканер > [' + this.sName + '] : ' + msg);
   }
+
 }
 
 class MailLabelScaner extends BillScaner {
@@ -51,6 +53,10 @@ class MailLabelScaner extends BillScaner {
     this.doLog('В метке ' + NameLabel + ' ' + this.mailThread.length + ' цепочек.');
   }
 
+  extractData(eMail) {
+    return null;
+  }
+
   doScan(readBill, arrBills) {
     let mt = 0;
     let mc = 0;
@@ -66,7 +72,11 @@ class MailLabelScaner extends BillScaner {
           } else
             continue;
 
-          newBill = readBill(message);
+          const eData = this.extractData(message);
+          if (eData == undefined)
+            continue;
+
+          newBill = readBill(message, eData);
           if (newBill != null) {
             bc++;
             arrBills.push(newBill);
@@ -78,6 +88,69 @@ class MailLabelScaner extends BillScaner {
         break;
     }
     this.doLog(bc + ' чеков в ' + mc + ' письмах из ' + mt + ' цепочек добавлено.');
+  }
+
+}
+
+class MailTemplateScaner extends MailLabelScaner {
+
+  constructor(sTmplts) {
+    super('Почта');
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    this.eTmplts = GetTemplates(ss.getRangeByName(sTmplts));
+    this.doLog('Загружено ' + this.eTmplts.length + ' шаблонов.');
+  }
+
+  extractData(eMail) {
+    const sFrom = eMail.getFrom();
+    let mFrom = sFrom;
+    if (~sFrom.indexOf("<"))
+      mFrom = between(sFrom, "<", ">");
+    const theTmplt = this.eTmplts.find((element) => element.from == mFrom);
+    if (theTmplt == undefined)
+      this.doLog("!!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо !!! " + eMail.getSubject());
+
+    return theTmplt;
+  }
+
+  readData(MSG, Tmplt) {
+    return mailGenericGetInfo(Tmplt, MSG.getBody());
+  }
+
+}
+
+class DriveBillsScaner extends BillScaner {
+
+  constructor(sName) {
+    super(sName);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    const folderId = Sheets.Spreadsheets.get(ss.getId(), {ranges: rng, fields: 'sheets.data.rowData.values.hyperlink'})
+      .sheets[0]
+      .data[0]
+      .rowData[0]
+      .values[0]
+      .hyperlink
+    .substring(39);
+    const folderBills = DriveApp.getFolderById(folderId);
+
+    const NameFolder = folderBills.getName();
+    this.doLog("Читаем чеки на диске из папки: " + NameFolder + " Id: " + folderId);
+
+    this.bFolders = folderBills.getFolders();
+
+    this.monthToday = ss
+      .getRangeByName('Сегодня')
+      .getValue()
+      .getMonth();
+
+    this.monthPrev = this.dLastDate.getMonth();
+    if (this.dLastDate.getDate() < ss.getRangeByName('ДнейРетроДиск').getValue()) {
+      this.monthPrev--;
+      if (this.monthPrev < 0) this.monthPrev = 0;
+    }
+
+    this.doLog('В папке ' + NameFolder + ' ' + this.mailThread.length + ' цепочек.');
   }
 
 }
@@ -145,7 +218,13 @@ function ScanMail(ss, dLastMailDate, arrBills) {
 
   // Сканируем цепочки писем
   let thrd = 1;
-  const mailThreads = mailGetThreadByRngName('ЧекиПочта');
+  const sLabel = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getRangeByName('ЧекиПочта')
+    .getValue();
+  Logger.log("Читаем из почты с меткой: " + sLabel);
+
+  const mailThreads = GmailApp.getUserLabelByName(sLabel).getThreads();
   for (messages of mailThreads) {
     let lmd = messages.getLastMessageDate();
     let fff = lmd > dLastMailDate;

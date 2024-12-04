@@ -131,12 +131,12 @@ function getMonthName(dDate)
 }
 
 // Достает URL из Именованной ячейки таблицы.
-function GetGDriveFolderIdFromURL(rng)
+function GetGDriveFolderIdFromURL(rgn)
 {
   const url = Sheets.Spreadsheets.get(
     SpreadsheetApp.getActiveSpreadsheet().getId(),
     {
-      ranges: rng,
+      ranges: rgn,
       fields: 'sheets.data.rowData.values.hyperlink'
     })
     .sheets[0]
