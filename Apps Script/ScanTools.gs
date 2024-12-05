@@ -3,7 +3,6 @@
  class BillScaner
  class MailLabelScaner extends BillScaner
  ScanDrive
- ScanMail
 
 */
 
@@ -121,11 +120,12 @@ class MailTemplateScaner extends MailLabelScaner {
 
 class DriveBillsScaner extends BillScaner {
 
-  constructor(sName) {
-    super(sName);
+  constructor(sRetro) {
+    super('Диск');
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    const folderId = Sheets.Spreadsheets.get(ss.getId(), {ranges: rng, fields: 'sheets.data.rowData.values.hyperlink'})
+    const nURL = 'ЧекиДиск';
+    const folderId = Sheets.Spreadsheets.get(ss.getId(), {ranges: nURL, fields: 'sheets.data.rowData.values.hyperlink'})
       .sheets[0]
       .data[0]
       .rowData[0]
@@ -135,7 +135,7 @@ class DriveBillsScaner extends BillScaner {
     const folderBills = DriveApp.getFolderById(folderId);
 
     const NameFolder = folderBills.getName();
-    this.doLog("Читаем чеки на диске из папки: " + NameFolder + " Id: " + folderId);
+    this.doLog("Читаем чеки из папки: " + NameFolder + " Id: " + folderId);
 
     this.bFolders = folderBills.getFolders();
 
@@ -144,13 +144,50 @@ class DriveBillsScaner extends BillScaner {
       .getValue()
       .getMonth();
 
+    const nRetro = ss.getRangeByName(sRetro).getValue();
     this.monthPrev = this.dLastDate.getMonth();
-    if (this.dLastDate.getDate() < ss.getRangeByName('ДнейРетроДиск').getValue()) {
+    if (this.dLastDate.getDate() < nRetro) {
       this.monthPrev--;
       if (this.monthPrev < 0) this.monthPrev = 0;
     }
+  }
 
-    this.doLog('В папке ' + NameFolder + ' ' + this.mailThread.length + ' цепочек.');
+  doScan(arrBills) {
+    //
+    let NumBills = 0;
+    let NumFiles = 0;
+
+    // Сканируем вложенные папки
+    while (this.bFolders.hasNext()) {
+      const bFolder = this.bFolders.next();
+      const nMonth = bFolder.getName().slice(3);
+      const iMonth = getMonthNum(nMonth, true);
+      // Пропускаем будушие месяцы и месяцы предшествующие предпоследнему обработанному
+      if (iMonth > this.monthToday || iMonth < this.monthPrev)
+        continue;
+    
+      this.doLog("Папка " + nMonth);
+
+      let aFiles = bFolder.getFiles();
+      while (aFiles.hasNext()) {
+        const fBill = aFiles.next();
+        NumFiles++;
+        const bFileDate = fBill.getDateCreated();
+        if (bFileDate > this.dLastDate) {
+          if (bFileDate > this.newDate)
+            this.newDate = bFileDate;
+        } else continue;
+
+        const sBill = fBill.getBlob().getDataAsString();
+        if (sBill == undefined) continue;
+
+        const bBill = billInfo(sBill);
+        arrBills.push(bBill);
+        this.doLog("Чек N " + ++NumBills + " в файле (" + NumFiles + ") " + fBill.getName() + dbgBillInfo(bBill));
+      } // цикл файлов в папке
+    } // цикл вложенных папок по месяцам
+
+    this.doLog("Считано " + NumBills + " новых чеков из " + NumFiles + " файлов. Последний файл от " + this.newDate.toISOString());
   }
 
 }
@@ -206,67 +243,4 @@ function ScanDrive(ss, dLastDriveDate, arrBills) {
 
   Logger.log("Считано " + NumBills + " новых чеков. Последний файл от " + newLastDriveDate.toISOString());
   return newLastDriveDate;
-}
-
-function ScanMail(ss, dLastMailDate, arrBills) {
-  // Читаем шаблоны для сканера
-  const eTmplts = GetTemplates(ss.getRangeByName('ШаблоныЧеков'));
-
-  let newLastMailDate = dLastMailDate;
-  let NumBills = 0;
-  let bBill = {};
-
-  // Сканируем цепочки писем
-  let thrd = 1;
-  const sLabel = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getRangeByName('ЧекиПочта')
-    .getValue();
-  Logger.log("Читаем из почты с меткой: " + sLabel);
-
-  const mailThreads = GmailApp.getUserLabelByName(sLabel).getThreads();
-  for (messages of mailThreads) {
-    let lmd = messages.getLastMessageDate();
-    let fff = lmd > dLastMailDate;
-    if (messages.getLastMessageDate() < dLastMailDate)
-      break;
-
-    let m = 0;
-    for (message of messages.getMessages()) {
-      const dDate = message.getDate();
-      if (dDate > dLastMailDate) {
-        if (dDate > newLastMailDate)
-          newLastMailDate = dDate;
-      } else
-        continue;
-
-      const sBody = message.getBody();
-      const sFrom = message.getFrom();
-      let mFrom = sFrom;
-      if (~sFrom.indexOf("<"))
-        mFrom = between(sFrom, "<", ">");
-      const theTmplt = eTmplts.find((element) => element.from == mFrom);
-      if (theTmplt == undefined)
-      {
-        Logger.log(">>> !!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо [" + sBody.length + "] от " + dDate.toISOString() + " >>> ");
-        // ss.getSheetByName('DBG').getRange(1, 1).setValue(sBody);
-        continue;
-      }
-
-      Logger.log( "Письмо " + thrd + "#" + ++m + " от " + dDate.toISOString() + " > " + message.getSubject() + " ["+ sBody.length +"] From: " + sFrom + " ." );
-
-      //try {
-        bBill = mailGenericGetInfo(theTmplt, sBody);
-      /*} catch (err) {
-        Logger.log(">>> !!! Ошибка чтения чека из письма.", err);
-        continue;
-      }*/
-      arrBills.push(bBill);
-      Logger.log("Чек N " + ++NumBills + dbgBillInfo(bBill));
-    } // Письма в цепочке
-    thrd++;
-  } // Цепочки писем
-
-  Logger.log("Считано " + NumBills + " новых чеков. Последнее письмо от " + newLastMailDate.toISOString());
-  return newLastMailDate;
 }

@@ -160,7 +160,7 @@ function SettingCostInfo(ss, br) {
 
   //br.setNote('Row :' + flgDbg + ' Val :' + NewVal);
   if (flgDbg) rTest.offset(2, 1).setValue(NewVal);
-  
+
   if (NewVal != '')
   {
     const range = ss.getRangeByName('СтРсх' + NewVal);
@@ -357,7 +357,7 @@ function onOnceAnHour() {
   let newBills = [];
 
   // Сканируем диск
-  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
+/*  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
   let dLastDriveDate = rLastDriveDate.getValue();
   if (dLastDriveDate === "") {
     dLastDriveDate = dDate0;
@@ -365,20 +365,14 @@ function onOnceAnHour() {
   } else
     Logger.log("Дата последнего файла : " + dLastDriveDate);
   const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
+*/
+  const billsDrive = new DriveBillsScaner('ДнейРетроДиск');
+  billsDrive.doScan(newBills);
 
   // Сканируем чеки в почте
   const billsMail = new MailTemplateScaner('ШаблоныЧеков');
   billsMail.doScan(billsMail.readData, newBills);
-/*
-  const rLastMailDate = ss.getRangeByName('ДатаЧекПочта');
-  let dLastMailDate = rLastMailDate.getValue();
-  if (dLastMailDate === "") {
-    dLastMailDate = dDate0;
-    Logger.log("Принимаем дату последнего письма : " + dLastMailDate);
-  } else
-    Logger.log("Дата последнего письма : " + dLastMailDate);
-  const newLastMailDate = ScanMail(ss, dLastMailDate, newBills);
-*/
+
   // Сканируем покупки Ali
   const rLastAliDate = getDateRangeDefault('ДатаЧекAli');
 
@@ -537,10 +531,10 @@ function onOnceAnHour() {
   Logger.log("Пробежались по чекам на листе. В списке найденных осталось :" + newBills.length);
 
   Logger.log("Обновляем даты.");
-  if (newLastDriveDate > dLastDriveDate)
-    rLastDriveDate.setValue(newLastDriveDate);
-  //if (newLastMailDate > dLastMailDate)
-  //  rLastMailDate.setValue(newLastMailDate);
+  //if (newLastDriveDate > dLastDriveDate)
+  //  rLastDriveDate.setValue(newLastDriveDate);
+  billsDrive.updateDate();
+
   billsMail.updateDate();
   billsUBER.updateDate();
   billsYandexGo.updateDate();
