@@ -186,7 +186,9 @@ function setCostBill(rSumm, bBill, arrInfoRemarkNote)
   // Выставляем время покупки
   rSumm.offset(0,-1)
     .setFormula("=" + A1date)
-    .setNumberFormat("HH:mm");
+    .setNumberFormat("HH:mm")
+    .offset(0, 14)
+    .setFormula("=НАЗВМЕС(" + A1date + ")");
 
   // Если наличные, то выставляем счет списания
   if (bBill.cash != 0)

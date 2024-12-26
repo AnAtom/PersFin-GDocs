@@ -25,11 +25,10 @@ function getAliExpressBillInfo(BillMail) {
 function MenuCheckAliExpress() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  const flgDbg = dbgGetDbgFlag(true);
+  const flgDbg = dbgGetFlag(true);
   
   // Лист для отладки
-  var sTest = ss.getSheetByName("Test");
-  var rTest = sTest.getRange(1, 1);
+  var rDGB = ss.getSheetByName("dbg").getRange(1, 1);
 
   var k = 0;
 
@@ -46,10 +45,10 @@ function MenuCheckAliExpress() {
         var Body = message.getBody();
         Logger.log( j + " > " + subject + " [[[ "+ Body.length.toString() +" ]]]");
 
-        if (flgDbg) rTest.offset(k, 0).setValue(" > " + subject + " [[[ "+ Body.length.toString() +" ]]]"); 
         if (flgDbg) {
+          rDGB.offset(k, 0).setValue(" > " + subject + " [[[ "+ Body.length.toString() +" ]]]"); 
           let s = dbgSplitLongString(Body, 4950);
-          rTest.offset(k, 1, 1, s.length). setValues([s]);
+          rDGB.offset(k, 1, 1, s.length). setValues([s]);
         }
                 
         //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
@@ -62,11 +61,11 @@ function MenuCheckAliExpress() {
         var Body = message.getBody();
         Logger.log( j + " > " + subject + " <<< "+ Body.length.toString() +" >>>");
 
-        if (flgDbg) rTest.offset(k, 0).setValue(" # " + subject + " <<< "+ Body.length.toString() +" >>>"); 
         if (flgDbg) {
-          //dbgSplitLongString(rTest.offset(k, 1), Body);
+          rDGB.offset(k, 0).setValue(" # " + subject + " <<< "+ Body.length.toString() +" >>>"); 
+          //dbgSplitLongString(rDGB.offset(k, 1), Body);
           let s = dbgSplitLongString(Body, 49500);
-          rTest.offset(k, 1, 1, s.length). setValues([s]);
+          rDGB.offset(k, 1, 1, s.length). setValues([s]);
         }
 
         //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
@@ -147,11 +146,11 @@ function SettingTrntnType(ss, br) {
 
 // Устанавливаем список расходов для выбранной статьи расходов
 function SettingCostInfo(ss, br) {
-  const flgDbg = dbgGetDbgFlag(false);
+  const flgDbg = dbgGetFlag(false);
 
   if (flgDbg)
   {
-    var rTest = ss.getSheetByName('Test').getRange(1, 1);
+    var rDGB = ss.getSheetByName('dbg').getRange(1, 1);
   }
   //br.setNote('Test :' + sTest + ' Range :' + rTest.getNumRows());
 
@@ -159,7 +158,7 @@ function SettingCostInfo(ss, br) {
   const NewVal = br.getValue();
 
   //br.setNote('Row :' + flgDbg + ' Val :' + NewVal);
-  if (flgDbg) rTest.offset(2, 1).setValue(NewVal);
+  if (flgDbg) rDGB.offset(2, 1).setValue(NewVal);
 
   if (NewVal != '')
   {
@@ -182,18 +181,18 @@ function SettingCostInfo(ss, br) {
 
 // Устанавливаем список информации для выбранного расхода
 function SettingCostNote(ss, br) {
-  const flgDbg = dbgGetDbgFlag(false);
+  const flgDbg = dbgGetFlag(false);
   
   if (flgDbg)
   {
     // Лист для отладки
-    var rTest = ss.getSheetByName('Test').getRange(1, 1);
+    var rDGB = ss.getSheetByName('dbg').getRange(1, 1);
   }
 
   const cell = br.offset(0,1);
   const NewVal = br.getValue();
 
-  if (flgDbg) rTest.offset(2, 1).setValue(NewVal);
+  if (flgDbg) rDGB.offset(2, 1).setValue(NewVal);
 
   let range;
   //SpreadsheetApp.getActive().toast('Range :'+ range);
@@ -217,29 +216,25 @@ function SettingCostNote(ss, br) {
 
 // Читаем информацию о чеке из json строки
 function SettingCostBill(ss, br) {
-  const flgDbg = dbgGetDbgFlag(false);
+  const flgDbg = dbgGetFlag(false);
 
   if (flgDbg)
   {
     // Лист для отладки
-    var rTest = ss.getSheetByName('Test').getRange(1, 1);
+    var rDGB = ss.getSheetByName('dbg').getRange(1, 1);
   }
 
   const NewVal = br.getValue();
   if (NewVal == "") return;
 
-  if (flgDbg) rTest.offset(2, 1).setValue(NewVal);
+  if (flgDbg) rDGB.offset(2, 1).setValue(NewVal);
 
   const bill = billInfo(NewVal);
 
   if (flgDbg) {
     if (bill != undefined)
-      rTest.offset(3, 1).setValue(bill.name)
-      .offset(1, 0).setValue(bill.summ)
-      .offset(1, 0).setValue(bill.date)
-      .offset(1, 0).setValue(bill.cash)
-      .offset(1, 0).setValue(bill.shop);
-    else rTest.offset(3, 1).setValue("UNDEFINED !!!");
+      rDGB.offset(3, 1).setValues([[bill.name, bill.summ, bill.date, bill.cash, bill.shop]]);
+    else rDGB.offset(3, 1).setValue("UNDEFINED !!!");
   }
 
   if (bill == undefined) return;
@@ -247,17 +242,17 @@ function SettingCostBill(ss, br) {
   // "dd.mm", "HH:mm", "#,##0.00[$ ₽]"
 
   // Выставляем сумму покупки
-  br.offset(0,-5)
+  br.offset(0, -5)
   .setValue(bill.summ)
   .setNumberFormat("#,##0.00[$ ₽]");
 
   // Выставляем дату покупки и получаем адрес ячейки с датой для выставления времени
-  const A1date = br.offset(0,-7).setValue(bill.date).setNumberFormat("dd.mm").getA1Notation();
+  const A1date = br.offset(0, -7).setValue(bill.date).setNumberFormat("dd.mm").getA1Notation();
 
-  if (flgDbg) rTest.offset(8, 1).setValue(A1date);
+  if (flgDbg) rDGB.offset(8, 1).setValue(A1date);
 
   // Выставляем время покупки
-  br.offset(0,-6)
+  br.offset(0, -6)
   .setValue("=" + A1date)
   .setNumberFormat("HH:mm");
 
@@ -284,10 +279,11 @@ function onOpen(e) {
   const menuScan = [
     {name: "Чеки AliExpress", functionName: 'MenuCheckAliExpress'},
     null,
-    {name: "Очистить отладку", functionName: 'dbgClearTestSheet'}
+    {name: "Очистить отладку", functionName: 'dbgClearSheet'}
   ];
   Logger.log('Добавляем пункты меню.');
   e.source.addMenu("Сканировать", menuScan);
+  onOnceAnHour()
 }
 
 function onEdit(e) {
@@ -357,15 +353,6 @@ function onOnceAnHour() {
   let newBills = [];
 
   // Сканируем диск
-/*  const rLastDriveDate = ss.getRangeByName('ДатаЧекДиск');
-  let dLastDriveDate = rLastDriveDate.getValue();
-  if (dLastDriveDate === "") {
-    dLastDriveDate = dDate0;
-    Logger.log("Принимаем дату последнего файла : " + dLastDriveDate);
-  } else
-    Logger.log("Дата последнего файла : " + dLastDriveDate);
-  const newLastDriveDate = ScanDrive(ss, dLastDriveDate, newBills);
-*/
   const billsDrive = new DriveBillsScaner('ДнейРетроДиск');
   billsDrive.doScan(newBills);
 
@@ -490,7 +477,23 @@ function onOnceAnHour() {
       iInsrtBill += 1;
       if (!(~firstDateSummRow)) firstDateSummRow = i; // Если небыло запомненной строки, то вставляем перед этой
       Logger.log('<<< Вставляем ' + iInsrtBill + ' чеков перед строкой ' + firstDateSummRow);
-      costs.insertRowsAfter(firstDateSummRow - 1, iInsrtBill);
+      // Определяем есть ли подчеркивание
+      const underlinedRow = costs.getRange(firstDateSummRow - 1, 1, 1, 9);
+      if (underlinedRow.getBorder() != null) {
+        Logger.log('___ Вставляем над подчеркиванием.');
+        const underlinedData = underlinedRow.getValues();         // Сохраняем данные из подчеркнутой строки
+        costs.insertRowsBefore(firstDateSummRow - 1, iInsrtBill); // Вставляем строки над ней
+        Logger.log('^^^ Перемещаем строку ' + underlinedData);
+        costs.getRange(firstDateSummRow - 1, 1, 1, 9)
+          .setValues(underlinedData)                              // Сохраняем данные из подчеркнутой строки в первую вставленную
+          .offset(0, 0, 1, 1)                                     // потому, что эта строка будет надписана
+          .setNumberFormat("dd.mm")                               // и выставляем правильные форматы для даты, времени и суммы
+          .offset(0, 1)
+          .setNumberFormat("HH:mm")
+          .offset(0, 1)
+          .setNumberFormat("#,##0.00[$ ₽]")   ; 
+      } else costs.insertRowsBefore(firstDateSummRow, iInsrtBill);
+
       for (let j = 0; j < iInsrtBill; j++)
         setCostBill(costs.getRange(firstDateSummRow + j, 3), newBills[j], getShopInfoRemarkNote(newBills[j].shop, newBills[j].name, lstStores, lstIgnore, shops));
       i += iInsrtBill;
@@ -531,10 +534,7 @@ function onOnceAnHour() {
   Logger.log("Пробежались по чекам на листе. В списке найденных осталось :" + newBills.length);
 
   Logger.log("Обновляем даты.");
-  //if (newLastDriveDate > dLastDriveDate)
-  //  rLastDriveDate.setValue(newLastDriveDate);
   billsDrive.updateDate();
-
   billsMail.updateDate();
   billsUBER.updateDate();
   billsYandexGo.updateDate();

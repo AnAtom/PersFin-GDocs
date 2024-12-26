@@ -68,12 +68,15 @@ function newOrderMail()
   sDBG.getRange(2, 1, sDBG.getLastRow(), sDBG.getLastColumn()).clear();
   var rTest = sDBG.getRange(1, 1);
   const showBody = false;
+  const preDBG = false;
+
+  var arrOrders = [];
+  var k = 0;
+  var l = 1;
 
   const rLastDate = ss.getRangeByName('ДатаОплачен'); // ДатаОформлен
   let dLastDate = rLastDate.getValue();
   let newLastDate = dLastDate;
-  var k = 0;
-  var l = 1;
 
   const mailThreads = GmailApp
     .getUserLabelByName(ss
@@ -113,12 +116,21 @@ function newOrderMail()
 
       Logger.log("Номер <" + orderNum + "> дата |" + orderDate + "| ISO " + isoDate + " сумма (" + orderSum + ') оплата [' + orderCard + ']');
 
-      rTest.offset(l, 0, 1, 6).setValues([[isoDate, orderNum, orderSum, orderCard, subject, Body.length]]);
-      if (showBody) {
-        let m = dbgSplitLongString(Body, 4950);
-        rTest.offset(l, 6, 1, m.length).setValues([m]);
-        rTest.offset(l++, 6+m.length).setValue('### Оплачен ###');
-      } else rTest.offset(l++, 4).setValue(subject);
+      if (preDBG) { // Дата	Номер	Сумма	Карта	Сабж
+        rTest.offset(l, 0, 1, 6).setValues([[isoDate, orderNum, orderSum, orderCard, subject, Body.length]]);
+        if (showBody) {
+          let m = dbgSplitLongString(Body, 4950);
+          rTest.offset(l, 6, 1, m.length).setValues([m]);
+          rTest.offset(l++, 6+m.length).setValue('### Оплачен ###');
+        } else rTest.offset(l++, 4).setValue(subject);
+      }
+
+      // num: , paySum: , payDate: , payCard: , payURL: , placedSum: , placedDate: , placedURL: , closedSum: , closedDate: , closedURL:
+      var Order = {num: orderNum,
+            paySum: orderSum, payDate: new Date(isoDate), payCard: orderCard, payURL: messages.getPermalink(), 
+            placedSum: 0, placedDate: '', placedURL: '', 
+            closedSum: 0, closedDate: '', closedURL: ''};
+      arrOrders.push(Order)
       k++;
     } // Сообщения с чеками AliExpress Оплачен
   } // Цепочки сообщений с чеками AliExpress Оплачен
@@ -153,11 +165,11 @@ function newOrderMail()
 
       var orderDate = between2(Body, 'Оформлен', '</td>', '<b>', '</b>'); // s.slice(s.indexOf('>')+1).trim();
       // 23-10-2024, 08:11 UTC
-      var isoDate = orderDate.slice(6, 10)    // Год
+      var isoDate = orderDate.slice(6, 10)         // Год
             .concat(
-              "-", orderDate.slice(3, 5),     // месяц
-              "-", orderDate.slice(0, 2),     // день
-              "T", orderDate.slice(12, 17));  // время
+              "-", orderDate.slice(3, 5),          // месяц
+              "-", orderDate.slice(0, 2),          // день
+              "T", orderDate.slice(12, 17), 'Z');  // время
 
       let s = between2(Body, 'Сумма заказа', '</tr>', '<td align=', '₽');
       var orderSum = s.slice(s.indexOf('>')+1).trim().replace(",", ".") * 1.0;
@@ -166,13 +178,27 @@ function newOrderMail()
 
       Logger.log("Номер <" + orderNum + "> дата |" + orderDate + "| ISO " + isoDate + " сумма (" + orderSum + ')');
 
-      rTest.offset(l, 0, 1, 6).setValues([[isoDate, orderNum, orderSum, '', subject, Body.length]]);
+      if (preDBG) { // Дата	Номер	Сумма	Карта	Сабж
+        rTest.offset(l, 0, 1, 6).setValues([[isoDate, orderNum, orderSum, '', subject, Body.length]]);
+        if (showBody) {
+          let m = dbgSplitLongString(Body, 4950);
+          rTest.offset(l, 6, 1, m.length).setValues([m]);
+          rTest.offset(l++, 6+m.length).setValue('### Оформлен ###');
+        } else rTest.offset(l++, 4).setValue(subject);
+      }
 
-      if (showBody) {
-        let m = dbgSplitLongString(Body, 4950);
-        rTest.offset(l, 6, 1, m.length).setValues([m]);
-        rTest.offset(l++, 6+m.length).setValue('### Оформлен ###');
-      } else rTest.offset(l++, 4).setValue(subject);
+      var Order = arrOrders.find((element) => element.num == orderNum);
+      if (Order == undefined) {
+        Order = {num: orderNum,
+          paySum: 0, payDate: '', payCard: '', payURL: '',
+          placedSum: orderSum, placedDate: new Date(isoDate), placedURL: messages.getPermalink(),
+          closedSum: 0, closedDate: '', closedURL: ''};
+      } else {
+        Order.placedSum = orderSum;
+        Order.placedDate = new Date(isoDate);
+        Order.placedURL = messages.getPermalink();
+      }
+      arrOrders.push(Order);
       k++;
     } // Сообщения с чеками AliExpress Оформлен
   } // Цепочки сообщений с чеками AliExpress Оформлен
@@ -207,30 +233,49 @@ function newOrderMail()
       var orderNum = s.slice(s.indexOf('>')+1).trim();
 
       var orderDate = between2(Body, 'Оформлен', '</td>', '<b>', '</b>'); // s.slice(s.indexOf('>')+1).trim();
-      var isoDate = orderDate.slice(6, 10)    // Год
+      var isoDate = orderDate.slice(6, 10)         // Год
             .concat(
-              "-", orderDate.slice(3, 5),     // месяц
-              "-", orderDate.slice(0, 2),     // день
-              "T", orderDate.slice(12, 17));  // время
+              "-", orderDate.slice(3, 5),          // месяц
+              "-", orderDate.slice(0, 2),          // день
+              "T", orderDate.slice(12, 17), 'Z');  // время
 
       s = between2(Body, 'Сумма заказа', '</tr>', '<td align=', '₽');
       var orderSum = s.slice(s.indexOf('>')+1).trim().replace(",", ".") * 1.0;
 
       Logger.log("Номер <" + orderNum + "> дата |" + orderDate + "| ISO " + isoDate + " сумма (" + orderSum + ')');
 
-      rTest.offset(l, 0, 1, 6).setValues([[isoDate, orderNum, orderSum, '', subject, Body.length]]);
-
-      if (showBody) {
-        let m = dbgSplitLongString(Body, 4950);
-        rTest.offset(l, 6, 1, m.length).setValues([m]);
-        rTest.offset(l++, 6+m.length).setValue('### Завершен ###');
-      } else rTest.offset(l++, 4).setValue(subject);
+      if (preDBG) { // Дата	Номер	Сумма	Карта	Сабж
+        rTest.offset(l, 0, 1, 6).setValues([[isoDate, orderNum, orderSum, '', subject, Body.length]]);
+        if (showBody) {
+          let m = dbgSplitLongString(Body, 4950);
+          rTest.offset(l, 6, 1, m.length).setValues([m]);
+          rTest.offset(l++, 6+m.length).setValue('### Завершен ###');
+        } else rTest.offset(l++, 4).setValue(subject);
+      }
+      var Order = arrOrders.find((element) => element.num == orderNum);
+      if (Order == undefined) {
+        Order = {num: orderNum,
+          paySum: 0, payDate: '', payCard: '', payURL: '',
+          placedSum: 0, placedDate: '', placedURL: '',
+          closedSum: orderSum, closedDate: new Date(isoDate), closedURL: messages.getPermalink()};
+      } else {
+        Order.closedSum = orderSum;
+        Order.closedDate = new Date(isoDate);
+        Order.closedURL = messages.getPermalink();
+      }
+      arrOrders.push(Order);
       k++;
     } // Сообщения с чеками AliExpress Завершен
   } // Цепочки сообщений с чеками AliExpress Завершен
 
   Logger.log(k + " ============================================================================");
 
+  for (Order of arrOrders) {
+    // num: , paySum: , payDate: , payCard: , payURL: , placedSum: , placedDate: , placedURL: , closedSum: , closedDate: , closedURL:
+    Logger.log('Заказ ' + Order.num + ' (' + Order.paySum + ') |' + Order.payDate + '| <' + Order.payURL + '> [' + Order.payCard + ']');
+    Logger.log('      ................ (' + Order.placedSum + ') |' + Order.placedDate + '| <' + Order.placedURL + '>');
+    Logger.log('      ________________ (' + Order.closedSum + ') |' + Order.closedDate + '| <' + Order.closedURL + '>');
+  }
   //if (newLastDate > dLastDate)
   //  rLastDate.setValue(newLastDate);
   //if (newLastDate2 > dLastDate2)
