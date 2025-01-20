@@ -233,7 +233,7 @@ function SettingCostBill(ss, br) {
 
   if (flgDbg) {
     if (bill != undefined)
-      rDGB.offset(3, 1).setValues([[bill.name, bill.summ, bill.date, bill.cash, bill.shop]]);
+      rDGB.offset(3, 1, 1, 5).setValues([[bill.name, bill.summ, bill.date, bill.cash, bill.shop]]);
     else rDGB.offset(3, 1).setValue("UNDEFINED !!!");
   }
 
@@ -283,7 +283,7 @@ function onOpen(e) {
   ];
   Logger.log('Добавляем пункты меню.');
   e.source.addMenu("Сканировать", menuScan);
-  onOnceAnHour()
+  // onOnceAnHour()
 }
 
 function onEdit(e) {
@@ -544,7 +544,7 @@ function onOnceADay() {
   // Выполняется ежежневно
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  onOnceAnHour();
+  // onOnceAnHour();
 
   // Закрываем день.
   Logger.log("Закрываем день.");
