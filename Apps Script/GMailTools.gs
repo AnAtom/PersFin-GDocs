@@ -1,9 +1,11 @@
 /*
 
  CutByTemplate - вырезает значение из сообщения по шаблону
+ getDateByTemplate - вырезает по шаблону дату из сообщения и приводит к виду ЧЧ:мм дд.мм.гг
  mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
  GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
- ScanMail - читает чеки из новых писем
+ billYandexGo - парсинг писем от Яндекс Go
+ billUBER - парсинг писем от Uber
 
 */
 
@@ -20,19 +22,6 @@ function CutByTemplate(str, tmplt) {
   return "";
 }
 
-/*
- function CutFromPosByTemplate(str, pos, tmplt) {
-  switch(tmplt.pt) {
-    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1);
-    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-    case 2:
-        let s = between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-        return s.slice(s.indexOf(">")+1);
-  }
-  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
-  return "";
- }
-*/
 function getDateByTemplate(email, tmplt) {
   let s = '';
   let l = 2;
@@ -142,31 +131,6 @@ function GetTemplates(rTemplates) {
   return Tmplts;
 }
 
-/* Яндекс
-
- [{"_id":"6713afe1b206204a5ff995a3","createdAt":"2024-10-19T13:10:57+00:00","ticket":{"document":{"receipt":
- {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
-
- "dateTime":"2024-10-19T03:15:00",
- "ecashTotalSum":55400,
- "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":211161,"fiscalDriveNumber":"7386440800040048","fiscalSign":3663930572,
-
- "fnsUrl":"www.nalog.gov.ru","internetSign":1,
-
- "items":[
-  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":55400,"productType":1,"providerInn":"504207820709","quantity":1,"sum":55400}
-
- ],"kktRegId":"0000840607026308    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":55400,"operationType":1,"prepaidSum":0,
-
- "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_c9698b303b9347af89dfdb36bb4da522|authorization_0000"},
- "propertiesData":"ws:CICTKBVPRB","provisionSum":0,"requestNumber":877,"retailPlace":"taxi.yandex.ru",
- "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@go.yandex.com","shiftNumber":233,"taxationType":1,"appliedTaxationType":1,
-
- "totalSum":55400,
- "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}}}}]
-
-*/
-
 function billYandexGo(eMail) {
   const sTripDate = eMail.getSubject().slice(28);
   const spcPos = sTripDate.indexOf(" ");
@@ -197,34 +161,6 @@ function billYandexGo(eMail) {
   return aBill;
 }
 
-/* UBER
-
- [{"_id":"673190cc8359dbbcb6c3f179","createdAt":"2024-11-11T05:06:20+00:00","ticket":{"document":{"receipt":
- {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
-
- "dateTime":"2024-11-10T06:19:00",
- "ecashTotalSum":101200,
- "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":136327,"fiscalDriveNumber":"7380440801186965","fiscalSign":744264270,
-
- "fnsUrl":"www.nalog.gov.ru","internetSign":1,
-
- "items":[
-
-  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":101200,"productType":1,"providerInn":"051302118203","quantity":1,"sum":101200}
-
- ],"kktRegId":"0000840547059265    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":101200,"operationType":1,"prepaidSum":0,
-
- "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_3f8aa5a15e89465680f9510986ad40fd|authorization_0000"},
- "propertiesData":"ws:CNUJGVSRPH","provisionSum":0,"requestNumber":968,"retailPlace":"https://support-uber.com",
- "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@support-uber.com","shiftNumber":137,"taxationType":1 ,"appliedTaxationType":1,
-
- "totalSum":101200,
- "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}
-
-}}}]
-
-*/
-
 function billUBER(eMail) {
   const sTripDate = eMail.getSubject().slice(23);
   const spcPos = sTripDate.indexOf(" ");
@@ -253,38 +189,66 @@ function billUBER(eMail) {
 }
 
 /*
-
-  const sDate = getDateByTemplate(email, mailTmplt.date);
-  const sd = "20" + sDate.slice(6, 8)  // Год
-    + "-" + sDate.slice(3, 5)         // месяц
-    + "-" + sDate.slice(0, 2)         // день
-
-  const tDate = new Date(sd + "T" + sDate.slice(9)); // Дата чека
-  const tDay = new Date(sd + "T00:00:00"); // Дата дня чека
-
-  // Logger.log( "дата ["+ sd + "T" + sDate.slice(9) +"] data " + tDate + " день {" + sd + "T00:00:00" + "} day " + tDay);
-
-  return {
-
- dTime: tDate.getTime(), 
-
- tDate: tDay.getTime(), 
-
- date: sDate, 
-
- summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
-
- "dateTime":"2024-11-18T22:05:00"
-
-  const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
-  const dDate = new Date(sDate);
-  const aDay = new Date(sDate.slice(0, sDate.indexOf("T")) + "T00:00:00");
-  
+ function CutFromPosByTemplate(str, pos, tmplt) {
+  switch(tmplt.pt) {
+    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1);
+    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+    case 2:
+        let s = between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+        return s.slice(s.indexOf(">")+1);
+  }
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  return "";
+ }
 */
+/* Яндекс
 
-//  return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
-//  return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
+ [{"_id":"6713afe1b206204a5ff995a3","createdAt":"2024-10-19T13:10:57+00:00","ticket":{"document":{"receipt":
+ {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
 
-function billAli(eMail) {
-  //
-}
+ "dateTime":"2024-10-19T03:15:00",
+ "ecashTotalSum":55400,
+ "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":211161,"fiscalDriveNumber":"7386440800040048","fiscalSign":3663930572,
+
+ "fnsUrl":"www.nalog.gov.ru","internetSign":1,
+
+ "items":[
+  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":55400,"productType":1,"providerInn":"504207820709","quantity":1,"sum":55400}
+
+ ],"kktRegId":"0000840607026308    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":55400,"operationType":1,"prepaidSum":0,
+
+ "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_c9698b303b9347af89dfdb36bb4da522|authorization_0000"},
+ "propertiesData":"ws:CICTKBVPRB","provisionSum":0,"requestNumber":877,"retailPlace":"taxi.yandex.ru",
+ "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@go.yandex.com","shiftNumber":233,"taxationType":1,"appliedTaxationType":1,
+
+ "totalSum":55400,
+ "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}}}}]
+
+*/
+/* UBER
+
+ [{"_id":"673190cc8359dbbcb6c3f179","createdAt":"2024-11-11T05:06:20+00:00","ticket":{"document":{"receipt":
+ {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
+
+ "dateTime":"2024-11-10T06:19:00",
+ "ecashTotalSum":101200,
+ "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":136327,"fiscalDriveNumber":"7380440801186965","fiscalSign":744264270,
+
+ "fnsUrl":"www.nalog.gov.ru","internetSign":1,
+
+ "items":[
+
+  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":101200,"productType":1,"providerInn":"051302118203","quantity":1,"sum":101200}
+
+ ],"kktRegId":"0000840547059265    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":101200,"operationType":1,"prepaidSum":0,
+
+ "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_3f8aa5a15e89465680f9510986ad40fd|authorization_0000"},
+ "propertiesData":"ws:CNUJGVSRPH","provisionSum":0,"requestNumber":968,"retailPlace":"https://support-uber.com",
+ "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@support-uber.com","shiftNumber":137,"taxationType":1 ,"appliedTaxationType":1,
+
+ "totalSum":101200,
+ "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}
+
+}}}]
+
+*/

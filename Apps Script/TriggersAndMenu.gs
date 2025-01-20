@@ -1,10 +1,9 @@
 /*
 
- onOpen(e)
- onEdit(e)
+ SetMenuAndUpdateOnOpen(e)
+ ReactOnDataEdit(e)
  onOnceAnHour()
  onOnceADay()
- onOnceAMonth()
 
  Редактирование на листе «Операции»
   SettingTrntnName - Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
@@ -17,64 +16,39 @@
 
 */
 
-function getAliExpressBillInfo(BillMail) {
-  const fSubject = BillMail.getSubject();
+function MenuChangeYear(NewYear) {
+  //
+  var ui = SpreadsheetApp.getUi();
 
-}
+  NewYear = 2026;
+  var result = ui.alert(
+    "Изменение финансового года",
+    "Создать новую копию для " + NewYear + " года?",
+    ui.ButtonSet.YES_NO,
+  );
 
-function MenuCheckAliExpress() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  const flgDbg = dbgGetFlag(true);
-  
-  // Лист для отладки
-  var rDGB = ss.getSheetByName("dbg").getRange(1, 1);
-
-  var k = 0;
-
-  var label = GmailApp.getUserLabelByName("Моё/Покупки/AliExpress");
-  var threads = label.getThreads();
-  for (var i = 0; i < threads.length; i++) {
-    Logger.log(threads[i].getFirstMessageSubject());
-    var messages = threads[i].getMessages();
-    for (var j = 0; j < messages.length; j++) {
-      var message = messages[j];
-      var subject = message.getSubject();
-      Logger.log( j + " > " + subject + " >> " + subject.indexOf("Ваш номер заказа").toString());
-      if (subject.indexOf("Ваш номер заказа") != -1) {
-        var Body = message.getBody();
-        Logger.log( j + " > " + subject + " [[[ "+ Body.length.toString() +" ]]]");
-
-        if (flgDbg) {
-          rDGB.offset(k, 0).setValue(" > " + subject + " [[[ "+ Body.length.toString() +" ]]]"); 
-          let s = dbgSplitLongString(Body, 4950);
-          rDGB.offset(k, 1, 1, s.length). setValues([s]);
-        }
-                
-        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
-        var bInfo = getAliExpressBillInfo(message);
-
-        k++;
-      } // Тема сообщения "Ваш номер заказа ..."
-      else
-      {
-        var Body = message.getBody();
-        Logger.log( j + " > " + subject + " <<< "+ Body.length.toString() +" >>>");
-
-        if (flgDbg) {
-          rDGB.offset(k, 0).setValue(" # " + subject + " <<< "+ Body.length.toString() +" >>>"); 
-          //dbgSplitLongString(rDGB.offset(k, 1), Body);
-          let s = dbgSplitLongString(Body, 49500);
-          rDGB.offset(k, 1, 1, s.length). setValues([s]);
-        }
-
-        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
-        var bInfo = getAliExpressBillInfo(message);
-
-        k++;
-      }
-    } // Сообщения с чеками AliExpress
-  } // Цепочки сообщений с чеками AliExpress
+  if (result == ui.Button.YES) {
+    //
+    Logger.log("Создаем копию таблицы");
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    var newSpreadsheet = spreadsheet.copy("Финансы " + NewYear);
+  } else {
+    Logger.log("Меняем год в этой таблице");
+    result = ui.alert(
+      "Изменение этого финансового года",
+      "Очистить все данные по расходкам и платежам?",
+      ui.ButtonSet.YES_NO,
+    );
+    if (result == ui.Button.YES) {
+      //
+      result = ui.alert(
+        "ПРЕДУПРЕЖДЕНИЕ!!!",
+        "Вы уверены, что хотите очистить все расходы и платежи?",
+        ui.ButtonSet.OK_CANCEL,
+      );
+      if (result == ui.Button.CANCEL) return;
+    }
+  }
 }
 
 // Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
@@ -275,18 +249,18 @@ function SettingCostBill(ss, br) {
       br.offset(0,i-3).setValue(shop[i]);
 }
 
-function onOpen(e) {
+function SetMenuAndUpdateOnOpen(e) {
   const menuScan = [
-    {name: "Чеки AliExpress", functionName: 'MenuCheckAliExpress'},
+    {name: "С новым годом!", functionName: 'MenuChangeYear'},
     null,
     {name: "Очистить отладку", functionName: 'dbgClearSheet'}
   ];
   Logger.log('Добавляем пункты меню.');
-  e.source.addMenu("Сканировать", menuScan);
-  // onOnceAnHour()
+  e.source.addMenu("Действия", menuScan);
+  onOnceAnHour()
 }
 
-function onEdit(e) {
+function ReactOnDataEdit(e) {
   const ss = e.source;
   Logger.log("Редактирование на листе <" + ss.getActiveSheet().getSheetName() + ">");
   // Читаем флаг "Использовать автосписки"
@@ -340,6 +314,13 @@ function onEdit(e) {
       if (ncol == 8 && br.getRow() == 23) {
         Logger.log("Переключаем сохранение чеков.");
         //
+      } else {
+        if (ncol == 2 && br.getRow() == 1) {
+          Logger.log("Переключаем финансовый год на " + e.value);
+          //
+          MenuChangeYear(e.value)
+        }
+        //
       }
   }
 }
@@ -361,7 +342,7 @@ function onOnceAnHour() {
   billsMail.doScan(billsMail.readData, newBills);
 
   // Сканируем покупки Ali
-  const rLastAliDate = getDateRangeDefault('ДатаЧекAli');
+  //const rLastAliDate = getDateRangeDefault('ДатаЧекAli');
 
   // Сканируем поездки UBER
   const billsUBER = new MailLabelScaner('Uber');
@@ -544,7 +525,7 @@ function onOnceADay() {
   // Выполняется ежежневно
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // onOnceAnHour();
+  onOnceAnHour();
 
   // Закрываем день.
   Logger.log("Закрываем день.");
@@ -648,20 +629,12 @@ function onOnceADay() {
     // Подчеркиваем снизу если не закончился месяц
     const rPrevDay = costs.getRange(thisDayRow, 1, 1, 10);
     rPrevDay.setBorder(null, null, true, null, null, null);
+  } else {
+    // Закрываем месяц.
+    Logger.log("Закрываем месяц.");
+    const rThisMonth = costs.getRange(thisDayRow, 1, 1, 11);
+    //rThisMonth.setBorder(null, null, true, null, null, null, null, SpreadsheetApp.BorderStyle.DOUBLE);
   }
 
   Logger.log("Закрыли день.")
-}
-
-function onOnceAMonth() {
-  // Закрываем месяц.
-  Logger.log("Закрываем месяц.");
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const costs = ss.getSheetByName("Расходы");
-
-  let thisMonthRow = 26;
-  // Подчеркиваем снизу
-  const rThisMonth = costs.getRange(thisMonthRow, 1, 1, 11);
-  //rThisMonth.setBorder(null, null, true, null, null, null, null, SpreadsheetApp.BorderStyle.DOUBLE);
-
 }
