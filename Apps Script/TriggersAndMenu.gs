@@ -1,7 +1,8 @@
 /*
 
- SetMenuAndUpdateOnOpen(e)
- ReactOnDataEdit(e)
+ onOpen(e) - Добавляем пункты меню
+ onEdit(e) - Настраиваем списки выбора
+ UpdateOnOpen(e)
  onOnceAnHour()
  onOnceADay()
 
@@ -15,6 +16,22 @@
   SettingCostBill - Изменилась Заметка (парсим чек)
 
 */
+
+function TestTest() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const newSpreadsheet = spreadsheet.copy("Копия Тест");
+  const newId = newSpreadsheet.getId();
+  const newFile = DriveApp.getFileById(newId);
+  const oldId = spreadsheet.getId();
+  const oldFile = DriveApp.getFileById(oldId);
+  const oldFolders = oldFile.getParents();
+  var folder;
+  while (oldFolders.hasNext()) {
+    folder = oldFolders.next();
+    Logger.log(folder.getName());
+  }
+  newFile.moveTo(folder);
+}
 
 function MenuChangeYear(NewYear) {
   //
@@ -168,23 +185,37 @@ function SettingCostNote(ss, br) {
 
   if (flgDbg) rDGB.offset(2, 1).setValue(NewVal);
 
-  let range;
+  var range;
   //SpreadsheetApp.getActive().toast('Range :'+ range);
 
-  if (NewVal == 'Продукты') range = ss.getRangeByName('СтРсхЕдаМагаз');
-  else if (NewVal == 'Пиво') range = ss.getRangeByName('СтРсхАлкПиво');
-  else if (NewVal == 'Кабак') range = ss.getRangeByName('СтРсхАлкКабак');
+  switch(NewVal) {
+    case 'Продукты':
+      range = ss.getRangeByName('СтРсхЕдаМагаз');
+      break;
+    case 'Пиво':
+      range = ss.getRangeByName('СтРсхАлкПиво');
+      break;
+    case 'Кабак':
+      range = ss.getRangeByName('СтРсхАлкКабак');
+      break;
+    case 'Чаевые':
+      // Используем дату, время и информацию с предыдущей строки
+      br
+      .offset(0, -5).setFormulaR1C1('=R[1]C[0]') // Дата
+      .offset(0, 1).setFormulaR1C1('=R[0]C[-1]') // Время
+      .offset(0, 2).setValue('Карман')           // Счет
+      .offset(0, 3).setFormulaR1C1('=R[1]C[0]'); // Примечание (заведение)
+      break;
+  }
 
   if (range != undefined)
-  {
-    const rule = SpreadsheetApp
-    .newDataValidation()
-    .setAllowInvalid(true)
-    .requireValueInRange(range)
-    .build();
-
-    cell.setDataValidation(rule);
-  }
+    cell.setDataValidation(
+      SpreadsheetApp
+      .newDataValidation()
+      .setAllowInvalid(true)
+      .requireValueInRange(range)
+      .build()
+    );
   else cell.clearDataValidations();
 }
 
@@ -212,23 +243,13 @@ function SettingCostBill(ss, br) {
   }
 
   if (bill == undefined) return;
-  // Формат ячеек
-  // "dd.mm", "HH:mm", "#,##0.00[$ ₽]"
 
-  // Выставляем сумму покупки
-  br.offset(0, -5)
-  .setValue(bill.summ)
-  .setNumberFormat("#,##0.00[$ ₽]");
-
-  // Выставляем дату покупки и получаем адрес ячейки с датой для выставления времени
-  const A1date = br.offset(0, -7).setValue(bill.date).setNumberFormat("dd.mm").getA1Notation();
-
-  if (flgDbg) rDGB.offset(8, 1).setValue(A1date);
-
-  // Выставляем время покупки
-  br.offset(0, -6)
-  .setValue("=" + A1date)
-  .setNumberFormat("HH:mm");
+  // Выставляем дату, время и сумму покупки
+  // Формат ячеек "dd.mm", "HH:mm", "#,##0.00[$ ₽]"
+  br
+  .offset(0, -7).setValue(bill.date).setNumberFormat("dd.mm")
+  .offset(0, 1).setFormulaR1C1('=R[0]C[-1]').setNumberFormat("HH:mm")
+  .offset(0, 1).setValue(bill.summ).setNumberFormat("#,##0.00[$ ₽]");
 
   // Если наличные, то выставляем счет списания
   if (bill.cash != 0)
@@ -245,11 +266,12 @@ function SettingCostBill(ss, br) {
     sShop.insertRowBefore(newRow);
     sShop.getRange(newRow, 4, 1, 2).setValues([[bill.shop, bill.name]]);
   } else
-    for (let i = 0; i < 3; i++)
-      br.offset(0,i-3).setValue(shop[i]);
+    br
+    .offset(0, -3, 1, 3)
+    .setValues([[shop[0], shop[1], shop[2]]]);
 }
 
-function SetMenuAndUpdateOnOpen(e) {
+function onOpen(e) {
   const menuScan = [
     {name: "С новым годом!", functionName: 'MenuChangeYear'},
     null,
@@ -257,10 +279,16 @@ function SetMenuAndUpdateOnOpen(e) {
   ];
   Logger.log('Добавляем пункты меню.');
   e.source.addMenu("Действия", menuScan);
-  onOnceAnHour()
+  Logger.log('Открылись.');
 }
 
-function ReactOnDataEdit(e) {
+function UpdateOnOpen(e) {
+  Logger.log('Первичное сканирование.');
+  onOnceAnHour()
+  Logger.log('Обновились.');
+}
+
+function onEdit(e) {
   const ss = e.source;
   Logger.log("Редактирование на листе <" + ss.getActiveSheet().getSheetName() + ">");
   // Читаем флаг "Использовать автосписки"
@@ -315,11 +343,6 @@ function ReactOnDataEdit(e) {
         Logger.log("Переключаем сохранение чеков.");
         //
       } else {
-        if (ncol == 2 && br.getRow() == 1) {
-          Logger.log("Переключаем финансовый год на " + e.value);
-          //
-          MenuChangeYear(e.value)
-        }
         //
       }
   }
