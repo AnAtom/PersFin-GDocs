@@ -17,22 +17,6 @@
 
 */
 
-function TestTest() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const newSpreadsheet = spreadsheet.copy("Копия Тест");
-  const newId = newSpreadsheet.getId();
-  const newFile = DriveApp.getFileById(newId);
-  const oldId = spreadsheet.getId();
-  const oldFile = DriveApp.getFileById(oldId);
-  const oldFolders = oldFile.getParents();
-  var folder;
-  while (oldFolders.hasNext()) {
-    folder = oldFolders.next();
-    Logger.log(folder.getName());
-  }
-  newFile.moveTo(folder);
-}
-
 function MenuChangeYear(NewYear) {
   //
   var ui = SpreadsheetApp.getUi();
@@ -48,7 +32,7 @@ function MenuChangeYear(NewYear) {
     //
     Logger.log("Создаем копию таблицы");
     var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    var newSpreadsheet = spreadsheet.copy("Финансы " + NewYear);
+    // var newSpreadsheet = spreadsheet.copy("Финансы " + NewYear);
   } else {
     Logger.log("Меняем год в этой таблице");
     result = ui.alert(
