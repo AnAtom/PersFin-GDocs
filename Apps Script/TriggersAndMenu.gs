@@ -55,8 +55,14 @@ function MenuChangeYear(NewYear) {
 // Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
 function SettingTrntnName(ss, br) {
   const NewVal = br.getValue();
-  const OpAcc = br.offset(0,-2); // Счет
-  const OpTrgt = br.offset(0,-1); // Цель
+  Logger.log('Изменилась операция на ' + NewVal);
+
+  const InOut = br.offset(0, -5); // +/-
+  if (InOut.getValue() == '')
+    InOut.setFormulaR1C1('=VLOOKUP(R[0]C[5];ОборотInOut;2;FALSE)');
+
+  const OpAcc = br.offset(0, -2); // Счет
+  const OpTrgt = br.offset(0, -1); // Цель
 
   const debit = 'Списание';
   const moving = 'Оборот';
@@ -64,7 +70,7 @@ function SettingTrntnName(ss, br) {
   if (~i)
   {
     // Выбрана оборотная операция
-    br.offset(0,1).setValue(moving);
+    br.offset(0, 1).setValue(moving);
     SetTargetRule(ss, OpAcc, 'СчетаДеб');
 
     if (NewVal == ss.getRangeByName('стрПеревод').getValue())
@@ -78,7 +84,7 @@ function SettingTrntnName(ss, br) {
   }
   else if (~findInRule(debit, NewVal))
   { // Выбрана опреация списания
-    br.offset(0,1).setValue(debit); // Списовать можем только с деьитовых счетов
+    br.offset(0, 1).setValue(debit); // Списовать можем только с деьитовых счетов
     const credit = 'Кредиты';
     if (NewVal == ss.getRangeByName('стрПрцКрдт').getValue())
     { // Проценты по кредиту
@@ -164,7 +170,7 @@ function SettingCostNote(ss, br) {
     var rDGB = ss.getSheetByName('dbg').getRange(1, 1);
   }
 
-  const cell = br.offset(0,1);
+  const cell = br.offset(0, 1);
   const NewVal = br.getValue();
 
   if (flgDbg) rDGB.offset(2, 1).setValue(NewVal);
@@ -175,6 +181,12 @@ function SettingCostNote(ss, br) {
   switch(NewVal) {
     case 'Продукты':
       range = ss.getRangeByName('СтРсхЕдаМагаз');
+      break;
+    case 'Перекус':
+      range = ss.getRangeByName('СтРсхЕдаПерекус');
+      break;
+    case 'Кофе':
+      range = ss.getRangeByName('СтРсхКофе');
       break;
     case 'Пиво':
       range = ss.getRangeByName('СтРсхАлкПиво');
@@ -309,6 +321,11 @@ function onEdit(e) {
       }
     case 'Расходы':
       switch(ncol) {
+        case 1:
+          var mnth=br.offset(0, 15);
+          if (mnth.getValue() == '')
+            mnth.setFormulaR1C1('=НАЗВМЕС(R[0]C[-15])');
+          return;
         case 5:
           // Изменилась статья расходов
           SettingCostInfo(ss, br);
