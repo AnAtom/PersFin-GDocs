@@ -26,17 +26,93 @@ function onEdit(e)
   Logger.log("Редактируем на листе [" + sname + "] в колонке (" + cname + ") строку :" + nrow);
   Logger.log("Format [" + br.getNumberFormat() + "] value (" + e.value + ")");
 
-  if (nrow == 3 && ncol == 2 && sname == 'Активные' && e.value.indexOf(' ') == -1) {
-    // Редактируем номер заказа
-    const orderNum = "'" + e.value.slice(0, 4) + ' ' + e.value.slice(4, 8) + ' ' + e.value.slice(8, 12) + ' ' + e.value.slice(12, 16);
-    const orderURL = "https://aliexpress.ru/order-list/" + e.value;
-    Logger.log("Номер заказа [" + orderNum + "] ссылка на заказ (" + orderURL + ")");
-    br.setValue(orderNum);
-    const valueURL = SpreadsheetApp.newRichTextValue()
-    .setText("Товар")
-    .setLinkUrl(orderURL)
-    .build();
-    ss.getSheetByName('История').getRange(3, 9).setRichTextValue(valueURL);
+  if (ncol == 2 && sname == 'Активные') {
+    // Добавили номер заказа
+    const sOrderHistory = ss.getSheetByName('История');
+    const sActiveOrders = ss.getSheetByName('Активные');
+    var val = e.value; 
+
+    if (nrow == 2) {
+      // Добавляем новый заказ с номером 
+      Logger.log("Добавляем новый заказ с номером [" + val + "]");
+  
+      // Вставили строчку в список заказов на вкладке История
+      sOrderHistory
+        .insertRowBefore(3)
+        .getRange(3, 2)
+        .setNumberFormat("dd.MM.yyyy")
+        .setValue(new Date());
+
+      // Опустили строчку с номером вниз на одну позицию и вставили дополнительные строчки для изображения заказа на вкладке Активные
+      sActiveOrders
+        .insertRowsBefore(2, 1)
+        .insertRowsAfter(3, 6)
+        .getRange(3, 1, 7)
+        .mergeVertically()
+        .setFormula('=IMAGE("")');
+      // Сделали ссылку на стоимость
+      sActiveOrders
+        .getRange(8, 2)
+        .setNumberFormat("#,##0.00[$ ₽]")
+        .setFormula("='История'!C3");
+      // Подчеркнули строку со стоимостью
+      sActiveOrders
+        .getRange(8, 2, 1, 2)
+        .setBorder(null, null, true, null, null, null);
+      // Сделали ссылку на дату доставки
+      sActiveOrders
+        .getRange(5, 2)
+        .setNumberFormat(" до d mmmm")
+        .setFormula("='История'!D3");
+      // Выделили номер заказа жирным
+      sActiveOrders
+        .getRange(3, 2)
+        .setFontWeight('bold');
+
+      // Делаем ссылку на заказ без пробелов, а номер заказа по четыре цифры через пробелы
+      var orderNum = "'";
+      var sURL = "https://aliexpress.ru/order-list/";
+      if (~val.indexOf(' ')) {
+        orderNum += val;
+        sURL += val.replace(/\s/g, '');
+      } else {
+        orderNum = "'" 
+          + val.slice(0, 4) + ' '
+          + val.slice(4, 8) + ' ' 
+          + val.slice(8, 12) + ' ' 
+          + val.slice(12, 16);
+        sURL += val;
+      }
+      sActiveOrders
+        .getRange(3, 2)
+        .setValue(orderNum);
+      // Формируем ссылку на заказ
+      const valueURL = SpreadsheetApp.newRichTextValue()
+        .setText("Товар")
+        .setLinkUrl(sURL)
+        .build();
+      sOrderHistory
+        .getRange(3, 9)
+        .setRichTextValue(valueURL);
+      Logger.log("Добавили: Номер заказа [" + orderNum + "] ссылка на заказ (" + sURL + ")");
+    } else if (nrow == 3 && val.indexOf(' ') == -1) {
+      // Редактируем номер заказа
+      const orderNum = "'" 
+        + val.slice(0, 4) + ' '
+        + val.slice(4, 8) + ' ' 
+        + val.slice(8, 12) + ' ' 
+        + val.slice(12, 16);
+      const orderURL = "https://aliexpress.ru/order-list/" + val;
+      Logger.log("Номер заказа [" + orderNum + "] ссылка на заказ (" + orderURL + ")");
+      br.setValue(orderNum);
+      const valueURL = SpreadsheetApp.newRichTextValue()
+        .setText("Товар")
+        .setLinkUrl(orderURL)
+        .build();
+      sOrderHistory
+        .getRange(3, 9)
+        .setRichTextValue(valueURL);
+    }
   }
 }
 
