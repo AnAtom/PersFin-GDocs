@@ -1,8 +1,8 @@
 /*
 
-newOrderMail - читать из почты
-newOrderURL - читать из ссылки
-newOrder - добавить пустой заказ
+ newOrderMail - читать из почты
+ newOrderURL - читать из ссылки
+ newOrder - добавить пустой заказ
 
 */
 
@@ -11,7 +11,8 @@ newOrder - добавить пустой заказ
 function onEdit(e)
 {
   const br = e.range;
-  if (br.getNumColumns() > 1 && e.value === '') // Скопировали диапазон или очистили ячейку
+  const val = e.value; 
+  if (br.getNumColumns() > 1 || val == undefined  || val === '') // Скопировали диапазон или очистили ячейку
     return;
 
   const ncol = br.getColumn();
@@ -24,13 +25,13 @@ function onEdit(e)
   const nrow = br.getRow();
   const sname = ss.getActiveSheet().getSheetName();
   Logger.log("Редактируем на листе [" + sname + "] в колонке (" + cname + ") строку :" + nrow);
-  Logger.log("Format [" + br.getNumberFormat() + "] value (" + e.value + ")");
+  Logger.log("Format [" + br.getNumberFormat() + "] value (" + val + ")");
+
+  const sOrderHistory = ss.getSheetByName('История');
 
   if (ncol == 2 && sname == 'Активные') {
     // Добавили номер заказа
-    const sOrderHistory = ss.getSheetByName('История');
     const sActiveOrders = ss.getSheetByName('Активные');
-    var val = e.value; 
 
     if (nrow == 2) {
       // Добавляем новый заказ с номером 
@@ -64,6 +65,10 @@ function onEdit(e)
         .getRange(5, 2)
         .setNumberFormat(" до d mmmm")
         .setFormula("='История'!D3");
+      // Сделали ссылку на трэк-номер
+      sActiveOrders
+        .getRange(6, 2)
+        .setFormula("='История'!E3");
       // Выделили номер заказа жирным
       sActiveOrders
         .getRange(3, 2)
@@ -92,27 +97,38 @@ function onEdit(e)
         .setLinkUrl(sURL)
         .build();
       sOrderHistory
-        .getRange(3, 9)
+        .getRange(3, 7)
         .setRichTextValue(valueURL);
       Logger.log("Добавили: Номер заказа [" + orderNum + "] ссылка на заказ (" + sURL + ")");
-    } else if (nrow == 3 && val.indexOf(' ') == -1) {
-      // Редактируем номер заказа
-      const orderNum = "'" 
-        + val.slice(0, 4) + ' '
-        + val.slice(4, 8) + ' ' 
-        + val.slice(8, 12) + ' ' 
-        + val.slice(12, 16);
-      const orderURL = "https://aliexpress.ru/order-list/" + val;
-      Logger.log("Номер заказа [" + orderNum + "] ссылка на заказ (" + orderURL + ")");
-      br.setValue(orderNum);
-      const valueURL = SpreadsheetApp.newRichTextValue()
-        .setText("Товар")
-        .setLinkUrl(orderURL)
-        .build();
-      sOrderHistory
-        .getRange(3, 9)
-        .setRichTextValue(valueURL);
     }
+  }
+  else if (ncol == 5 && sname == 'История') {
+    // Оформляем трек номер в виде ссылки
+    Logger.log("Ввели трек номер [" + val + "]");
+
+    var sURL;
+    // https://t.17track.net/en#nums=AML240103468811YQ
+    // https://www.pochta.ru/tracking?barcode=RM604067579HK
+    // https://global.cainiao.com/newDetail.htm?mailNoList=LP00727861465053
+    // https://global.cainiao.com/newDetail.htm?mailNoList=RLJ10391793
+    switch(val.slice(0, 3)) {
+      case 'LP0': 
+      case 'RLJ': 
+        sURL = "https://global.cainiao.com/newDetail.htm?mailNoList=";
+        break;
+      case 'AML': 
+        sURL = "https://t.17track.net/en#nums=";
+        break;
+      default: 
+        sURL = "https://www.pochta.ru/tracking?barcode=";
+    }
+    sURL += val;
+    Logger.log("Оформляем в виде ссылки на отслеживание (" + sURL + ")");
+    const URL = SpreadsheetApp.newRichTextValue()
+      .setText(val)
+      .setLinkUrl(sURL)
+      .build();
+    br.setRichTextValue(URL);
   }
 }
 
