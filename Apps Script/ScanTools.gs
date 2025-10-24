@@ -107,8 +107,13 @@ class MailTemplateScaner extends MailLabelScaner {
     if (~sFrom.indexOf("<"))
       mFrom = between(sFrom, "<", ">");
     const theTmplt = this.eTmplts.find((element) => element.from == mFrom);
-    if (theTmplt == undefined)
+    if (theTmplt == undefined) {
       this.doLog("!!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо !!! " + eMail.getSubject());
+
+      if (dbgGetFlag(false))
+        dbgPrintLongString(eMail.getBody());
+    } else
+      this.doLog("Читаем чек с адреса :" + mFrom + " по шаблону " + theTmplt.key);
 
     return theTmplt;
   }

@@ -84,7 +84,7 @@ function SettingTrntnName(ss, br) {
   }
   else if (~findInRule(debit, NewVal))
   { // Выбрана опреация списания
-    br.offset(0, 1).setValue(debit); // Списовать можем только с деьитовых счетов
+    br.offset(0, 1).setValue(debit); // Списовать можем только с дебитовых счетов
     const credit = 'Кредиты';
     if (NewVal == ss.getRangeByName('стрПрцКрдт').getValue())
     { // Проценты по кредиту
@@ -109,6 +109,7 @@ function SettingTrntnName(ss, br) {
     i = findInRule(receipt, NewVal);
     if (~i) { // Выбрана операция начисления
       br.offset(0,1).setValue(receipt);
+      OpTrgt.clearDataValidations();
       SetTargetRule(ss, OpAcc, 'СчетаДеб');
       if (i < 4)
         OpAcc.setValue("ЗП");
@@ -181,6 +182,9 @@ function SettingCostNote(ss, br) {
   switch(NewVal) {
     case 'Продукты':
       range = ss.getRangeByName('СтРсхЕдаМагаз');
+      break;
+    case 'Лекарства':
+      range = ss.getRangeByName('СтРсхЗдоровьеАптеки');
       break;
     case 'Перекус':
       range = ss.getRangeByName('СтРсхЕдаПерекус');
@@ -490,14 +494,14 @@ function onOnceAnHour() {
         costs.insertRowsBefore(firstDateSummRow - 1, iInsrtBill); // Вставляем строки над ней
         Logger.log('^^^ Перемещаем строку ' + underlinedData);
         costs.getRange(firstDateSummRow - 1, 1, 1, 9)
-          .setValues(underlinedData)                              // Сохраняем данные из подчеркнутой строки в первую вставленную
+          .setValues(underlinedData)                              // Переносим данные из подчеркнутой строки в первую вставленную
           .offset(0, 0, 1, 1)                                     // потому, что эта строка будет надписана
           .setNumberFormat("dd.mm")                               // и выставляем правильные форматы для даты, времени и суммы
           .offset(0, 1)
           .setNumberFormat("HH:mm")
           .offset(0, 1)
           .setNumberFormat("#,##0.00[$ ₽]")   ; 
-      } else costs.insertRowsBefore(firstDateSummRow, iInsrtBill);
+      } else costs.insertRowsAfter(firstDateSummRow-1, iInsrtBill);
 
       for (let j = 0; j < iInsrtBill; j++)
         setCostBill(costs.getRange(firstDateSummRow + j, 3), newBills[j], getShopInfoRemarkNote(newBills[j].shop, newBills[j].name, lstStores, lstIgnore, shops));

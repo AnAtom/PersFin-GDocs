@@ -175,7 +175,14 @@ function setCostBill(rSumm, bBill, arrInfoRemarkNote)
     .offset(0, 14)
     .setFormula("=НАЗВМЕС(" + A1date + ")");
 
+  var account = "Карман";
   // Если наличные, то выставляем счет списания
-  if (bBill.cash != 0)
-    rSumm.offset(0, 1).setValue("Карман");
+  if (bBill.cash == 0) {
+    account = rSumm
+      .getSheet()
+      .getParent()
+      .getRangeByName('СчетРасходы')
+      .getValue();
+  }
+  rSumm.offset(0, 1).setValue(account);
 }

@@ -18,7 +18,7 @@ function CutByTemplate(str, tmplt) {
         return s.slice(s.indexOf(">")+1).trim();
     case 11: return "";
   }
-  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " s/e (((" + tmplt.s1 + " /// " + tmplt.e1 + ")))");
   return "";
 }
 
@@ -47,14 +47,25 @@ function getDateByTemplate(email, tmplt) {
 }
 
 function mailGenericGetInfo(mailTmplt, email) {
+  let ErrorLine = "";
   // Вырезаем имя
   let sName = CutByTemplate(email, mailTmplt.name)
               .replace(/&quot;/g, '"');
+
+  if (sName == "") {
+    //
+    ErrorLine += "Name is Empty; ";
+  }
+
   // Убираем обрамляющие кавычки
   if (sName[0] == '"')
     sName = cutOuterQuotes(sName);
 
   const sDate = getDateByTemplate(email, mailTmplt.date);
+  if (sDate == "") {
+    //
+    ErrorLine += "Date is Empty; ";
+  }
   const isoDate = "20" + sDate.slice(6, 8)  // Год
     + "-" + sDate.slice(3, 5)         // месяц
     + "-" + sDate.slice(0, 2)         // день
@@ -63,6 +74,10 @@ function mailGenericGetInfo(mailTmplt, email) {
   let aBill = billDate(isoDateTime);
 
   const nSumm = CutByTemplate(email, mailTmplt.total).replace(/\s/g,'').replace(",", ".") * 1.0;
+  if (nSumm == 0.0) {
+    //
+    ErrorLine += "Summ is Zero; ";
+  }
   aBill.summ = nSumm;
 
   let nCash = CutByTemplate(email, mailTmplt.cash);
@@ -77,6 +92,17 @@ function mailGenericGetInfo(mailTmplt, email) {
 
   aBill.name = sName;
   aBill.shop = billFilterName(sName);
+
+  if (ErrorLine != "") {
+    //
+    Logger.log('Ошибка чтения чека в почте <' + mailTmplt.from + '> ' +  ErrorLine);
+
+    const flgDbg = dbgGetFlag(false);
+    if (flgDbg)
+      dbgPrintLongString(email);
+
+    return {};
+  }
 
   return aBill;
   //return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};

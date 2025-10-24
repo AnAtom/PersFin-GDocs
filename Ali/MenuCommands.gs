@@ -19,13 +19,15 @@ function onEdit(e)
 
   // SpreadSheet
   const ss = e.source;
-  let cname = ss.getActiveSheet().getRange(1, ncol).getValue();
+  let cname = ss.getActiveSheet()
+              .getRange(1, ncol)
+              .getValue();
   if (cname == undefined || cname == '')
     cname = ncol;
   const nrow = br.getRow();
-  const sname = ss.getActiveSheet().getSheetName();
+  const sname = br.getSheet().getSheetName();
   Logger.log("Редактируем на листе [" + sname + "] в колонке (" + cname + ") строку :" + nrow);
-  Logger.log("Format [" + br.getNumberFormat() + "] value (" + val + ")");
+  Logger.log("Format [" + br.getNumberFormat() + "] value (" + val + ") ncol=" + ncol + " sname=" + sname);
 
   const sOrderHistory = ss.getSheetByName('История');
 
@@ -102,7 +104,7 @@ function onEdit(e)
       Logger.log("Добавили: Номер заказа [" + orderNum + "] ссылка на заказ (" + sURL + ")");
     }
   }
-  else if (ncol == 5 && sname == 'История') {
+  else if ((ncol == 5 || ncol == 6) && sname == 'История') {
     // Оформляем трек номер в виде ссылки
     Logger.log("Ввели трек номер [" + val + "]");
 
@@ -442,4 +444,5 @@ function onOpen(e)
 function onOnceAnHour()
 {
   //
+  Logger.log("Сканируем почту");
 }
