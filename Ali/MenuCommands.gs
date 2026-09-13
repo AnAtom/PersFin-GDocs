@@ -1,8 +1,8 @@
 /*
 
-newOrderMail - читать из почты
-newOrderURL - читать из ссылки
-newOrder - добавить пустой заказ
+ newOrderMail - читать из почты
+ newOrderURL - читать из ссылки
+ newOrder - добавить пустой заказ
 
 */
 
@@ -11,32 +11,138 @@ newOrder - добавить пустой заказ
 function onEdit(e)
 {
   const br = e.range;
-  if (br.getNumColumns() > 1 && e.value === '') // Скопировали диапазон или очистили ячейку
+  const val = e.value; 
+  if (br.getNumColumns() > 1 || val == undefined  || val === '') // Скопировали диапазон или очистили ячейку
     return;
 
   const ncol = br.getColumn();
 
   // SpreadSheet
   const ss = e.source;
-  let cname = ss.getActiveSheet().getRange(1, ncol).getValue();
+  let cname = ss.getActiveSheet()
+              .getRange(1, ncol)
+              .getValue();
   if (cname == undefined || cname == '')
     cname = ncol;
   const nrow = br.getRow();
-  const sname = ss.getActiveSheet().getSheetName();
+  const sname = br.getSheet().getSheetName();
   Logger.log("Редактируем на листе [" + sname + "] в колонке (" + cname + ") строку :" + nrow);
-  Logger.log("Format [" + br.getNumberFormat() + "] value (" + e.value + ")");
+  Logger.log("Format [" + br.getNumberFormat() + "] value (" + val + ") ncol=" + ncol + " sname=" + sname);
 
-  if (nrow == 3 && ncol == 2 && sname == 'Активные' && e.value.indexOf(' ') == -1) {
-    // Редактируем номер заказа
-    const orderNum = "'" + e.value.slice(0, 4) + ' ' + e.value.slice(4, 8) + ' ' + e.value.slice(8, 12) + ' ' + e.value.slice(12, 16);
-    const orderURL = "https://aliexpress.ru/order-list/" + e.value;
-    Logger.log("Номер заказа [" + orderNum + "] ссылка на заказ (" + orderURL + ")");
-    br.setValue(orderNum);
-    const valueURL = SpreadsheetApp.newRichTextValue()
-    .setText("Товар")
-    .setLinkUrl(orderURL)
-    .build();
-    ss.getSheetByName('История').getRange(3, 9).setRichTextValue(valueURL);
+  const sOrderHistory = ss.getSheetByName('История');
+
+  if (ncol == 2 && sname == 'Активные') {
+    // Добавили номер заказа
+    const sActiveOrders = ss.getSheetByName('Активные');
+
+    if (nrow == 2) {
+      // Добавляем новый заказ с номером 
+      Logger.log("Добавляем новый заказ с номером [" + val + "]");
+  
+      // Вставили строчку в список заказов на вкладке История и установили дату (текущую)
+      sOrderHistory
+        .insertRowBefore(3)
+        .getRange(3, 3)
+        .setNumberFormat("dd.MM.yyyy")
+        .setValue(new Date());
+
+      // Опустили строчку с номером вниз на одну позицию и вставили дополнительные строчки для изображения заказа на вкладке Активные
+      sActiveOrders
+        .insertRowsBefore(2, 1)
+        .insertRowsAfter(3, 6)
+        .getRange(3, 1, 7)
+        .mergeVertically()
+        .setHorizontalAlignment('center')
+        .setFormula('=IMAGE("")');
+      // Сделали ссылку на стоимость
+      sActiveOrders
+        .getRange(8, 2)
+        .setNumberFormat("#,##0.00[$ ₽]")
+        .setFormula("='История'!D3");
+      // Подчеркнули строку со стоимостью
+      sActiveOrders
+        .getRange(8, 2, 1, 2)
+        .setBorder(null, null, true, null, null, null);
+      // Сделали ссылку на дату доставки
+      sActiveOrders
+        .getRange(5, 2)
+        .setNumberFormat(" до d mmmm")
+        .setFormula("='История'!E3");
+      // Сделали ссылку на страницу заказа
+      sActiveOrders
+        .getRange(4, 2)
+        .setFormula("='История'!I3");
+      // Сделали ссылку на трэк-номер
+      sActiveOrders
+        .getRange(6, 2)
+        .setFormula("='История'!G3");
+      // Сделали ссылку на площадку
+      sActiveOrders
+        .getRange(7, 3)
+        .setFormula("='История'!B3");
+      // Выделили номер заказа жирным
+      sActiveOrders
+        .getRange(3, 2)
+        .setFontWeight('bold');
+
+      // ИСПРАВИТЬ!!! в зависимости от площадки
+      // https://market.yandex.ru/my/order/57989200259
+      // https://www.ozon.ru/my/orderdetails/?order=18044876-0131
+      // Делаем ссылку на заказ без пробелов, а номер заказа по четыре цифры через пробелы
+      var orderNum = "'";
+      var sURL = "https://aliexpress.ru/order-list/";
+      if (~val.indexOf(' ')) {
+        orderNum += val;
+        sURL += val.replace(/\s/g, '');
+      } else {
+        orderNum = "'" 
+          + val.slice(0, 4) + ' '
+          + val.slice(4, 8) + ' ' 
+          + val.slice(8, 12) + ' ' 
+          + val.slice(12, 16);
+        sURL += val;
+      }
+      sActiveOrders
+        .getRange(3, 2)
+        .setValue(orderNum);
+      // Формируем ссылку на заказ
+      const valueURL = SpreadsheetApp.newRichTextValue()
+        .setText("Товар")
+        .setLinkUrl(sURL)
+        .build();
+      sOrderHistory
+        .getRange(3, 9)
+        .setRichTextValue(valueURL);
+      Logger.log("Добавили: Номер заказа [" + orderNum + "] ссылка на заказ (" + sURL + ")");
+    }
+  }
+  else if ((ncol == 7 || ncol == 8) && sname == 'История') {
+    // Оформляем трек номер в виде ссылки
+    Logger.log("Ввели трек номер [" + val + "]");
+
+    var sURL;
+    // https://t.17track.net/en#nums=AML240103468811YQ
+    // https://www.pochta.ru/tracking?barcode=RM604067579HK
+    // https://global.cainiao.com/newDetail.htm?mailNoList=LP00727861465053
+    // https://global.cainiao.com/newDetail.htm?mailNoList=RLJ10391793
+    switch(val.slice(0, 3)) {
+      case 'LP0': 
+      case 'RLJ': 
+        sURL = "https://global.cainiao.com/newDetail.htm?mailNoList=";
+        break;
+      case 'AML': 
+        sURL = "https://t.17track.net/en#nums=";
+        break;
+      default: 
+        sURL = "https://www.pochta.ru/tracking?barcode=";
+    }
+    sURL += val;
+    Logger.log("Оформляем в виде ссылки на отслеживание (" + sURL + ")");
+    const URL = SpreadsheetApp.newRichTextValue()
+      .setText(val)
+      .setLinkUrl(sURL)
+      .build();
+    br.setRichTextValue(URL);
   }
 }
 
@@ -135,7 +241,8 @@ function newOrderMail()
     } // Сообщения с чеками AliExpress Оплачен
   } // Цепочки сообщений с чеками AliExpress Оплачен
 
-  Logger.log(k + " ============================================================================");
+  Logger.log(" === " + k + " === Все оплаченые ===");
+  Logger.log(" ============================================================================");
 
   const rLastDate2 = ss.getRangeByName('ДатаОформлен');
   let dLastDate2 = rLastDate2.getValue();
@@ -203,7 +310,8 @@ function newOrderMail()
     } // Сообщения с чеками AliExpress Оформлен
   } // Цепочки сообщений с чеками AliExpress Оформлен
 
-  Logger.log(k + " ============================================================================");
+  Logger.log(" === " + k + " === Все оформленные ===");
+  Logger.log(" ============================================================================");
 
   const rLastDate3 = ss.getRangeByName('ДатаЗавершен');
   let dLastDate3 = rLastDate3.getValue();
@@ -268,7 +376,8 @@ function newOrderMail()
     } // Сообщения с чеками AliExpress Завершен
   } // Цепочки сообщений с чеками AliExpress Завершен
 
-  Logger.log(k + " ============================================================================");
+  Logger.log("=== " + k + " === Все завершенные ===");
+  Logger.log(" ============================================================================");
 
   for (Order of arrOrders) {
     // num: , paySum: , payDate: , payCard: , payURL: , placedSum: , placedDate: , placedURL: , closedSum: , closedDate: , closedURL:
@@ -350,4 +459,5 @@ function onOpen(e)
 function onOnceAnHour()
 {
   //
+  Logger.log("Сканируем почту");
 }

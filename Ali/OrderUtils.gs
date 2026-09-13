@@ -13,6 +13,11 @@ const mrktYandex = 2;
 
 function Test() {
   //
+  const s = '<table> <tr> <td> <span style="font-weight: 500; color:#f8f8f8; font-size: 0; line-height: 1px; margin: 0"> Заберите Ваш (1) подарок! </span></div> </td> </tr> </table>';
+  const ss = between(s, '<span', '/span');
+
+  Logger.log(ss);
+
   const z1 = '5550677229097566';
   const z1_1 = '5550 6772 2909 7566';
   const z2 = '18044876-0173';
@@ -131,5 +136,6 @@ function addNewOrder(orderNum) {
     .insertRowsAfter(2, 7)
     .getRange(3, 1, 7)
     .mergeVertically()
+    .setHorizontalAlignment('center')
     .setFormula('=IMAGE("")');
 }
