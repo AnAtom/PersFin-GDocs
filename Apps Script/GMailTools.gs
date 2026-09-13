@@ -1,9 +1,12 @@
 /*
 
  CutByTemplate - вырезает значение из сообщения по шаблону
+ getDateByTemplate - вырезает по шаблону дату из сообщения и приводит к виду ЧЧ:мм дд.мм.гг
  mailGenericGetInfo - универсальная процедура парсинга сообщения по шаблону
  GetTemplates - читает шаблоны для парсинга чеков в почте от различных ОФД
- ScanMail - читает чеки из новых писем
+ billYandexGo - парсинг писем от Яндекс Go
+ billFASTEN - парсинг писем от Fasten (ex Uber)
+ billUBER - парсинг писем от Uber
 
 */
 
@@ -16,23 +19,10 @@ function CutByTemplate(str, tmplt) {
         return s.slice(s.indexOf(">")+1).trim();
     case 11: return "";
   }
-  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " s/e (((" + tmplt.s1 + " /// " + tmplt.e1 + ")))");
   return "";
 }
 
-/*
- function CutFromPosByTemplate(str, pos, tmplt) {
-  switch(tmplt.pt) {
-    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1);
-    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-    case 2:
-        let s = between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
-        return s.slice(s.indexOf(">")+1);
-  }
-  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
-  return "";
- }
-*/
 function getDateByTemplate(email, tmplt) {
   let s = '';
   let l = 2;
@@ -58,14 +48,25 @@ function getDateByTemplate(email, tmplt) {
 }
 
 function mailGenericGetInfo(mailTmplt, email) {
+  let ErrorLine = "";
   // Вырезаем имя
   let sName = CutByTemplate(email, mailTmplt.name)
               .replace(/&quot;/g, '"');
+
+  if (sName == "") {
+    //
+    ErrorLine += "Name is Empty; ";
+  }
+
   // Убираем обрамляющие кавычки
   if (sName[0] == '"')
     sName = cutOuterQuotes(sName);
 
   const sDate = getDateByTemplate(email, mailTmplt.date);
+  if (sDate == "") {
+    //
+    ErrorLine += "Date is Empty; ";
+  }
   const isoDate = "20" + sDate.slice(6, 8)  // Год
     + "-" + sDate.slice(3, 5)         // месяц
     + "-" + sDate.slice(0, 2)         // день
@@ -74,6 +75,10 @@ function mailGenericGetInfo(mailTmplt, email) {
   let aBill = billDate(isoDateTime);
 
   const nSumm = CutByTemplate(email, mailTmplt.total).replace(/\s/g,'').replace(",", ".") * 1.0;
+  if (nSumm == 0.0) {
+    //
+    ErrorLine += "Summ is Zero; ";
+  }
   aBill.summ = nSumm;
 
   let nCash = CutByTemplate(email, mailTmplt.cash);
@@ -88,6 +93,17 @@ function mailGenericGetInfo(mailTmplt, email) {
 
   aBill.name = sName;
   aBill.shop = billFilterName(sName);
+
+  if (ErrorLine != "") {
+    //
+    Logger.log('Ошибка чтения чека в почте <' + mailTmplt.from + '> ' +  ErrorLine);
+
+    //const flgDbg = dbgGetFlag(false);
+    if (flgDbg)
+      dbgPrintLongString(email);
+
+    return {};
+  }
 
   return aBill;
   //return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
@@ -142,31 +158,6 @@ function GetTemplates(rTemplates) {
   return Tmplts;
 }
 
-/* Яндекс
-
- [{"_id":"6713afe1b206204a5ff995a3","createdAt":"2024-10-19T13:10:57+00:00","ticket":{"document":{"receipt":
- {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
-
- "dateTime":"2024-10-19T03:15:00",
- "ecashTotalSum":55400,
- "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":211161,"fiscalDriveNumber":"7386440800040048","fiscalSign":3663930572,
-
- "fnsUrl":"www.nalog.gov.ru","internetSign":1,
-
- "items":[
-  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":55400,"productType":1,"providerInn":"504207820709","quantity":1,"sum":55400}
-
- ],"kktRegId":"0000840607026308    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":55400,"operationType":1,"prepaidSum":0,
-
- "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_c9698b303b9347af89dfdb36bb4da522|authorization_0000"},
- "propertiesData":"ws:CICTKBVPRB","provisionSum":0,"requestNumber":877,"retailPlace":"taxi.yandex.ru",
- "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@go.yandex.com","shiftNumber":233,"taxationType":1,"appliedTaxationType":1,
-
- "totalSum":55400,
- "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}}}}]
-
-*/
-
 function billYandexGo(eMail) {
   const sTripDate = eMail.getSubject().slice(28);
   const spcPos = sTripDate.indexOf(" ");
@@ -197,6 +188,116 @@ function billYandexGo(eMail) {
   return aBill;
 }
 
+function billUBER(eMail) {
+  const sTripDate = eMail.getSubject().slice(23);
+  const spcPos = sTripDate.indexOf(" ");
+  const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
+/*
+  var s1 = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2));
+  var ms = sTripDate.slice(spcPos+1, spcPos2);
+  var mn = getMonthNum(ms);
+  var s2 = mn.toString().padStart(2, '0');
+  var s3 = sTripDate.slice(0, spcPos).padStart(2, '0');
+
+  const sDate = s1 + '-' + s2 + '-' + s3;
+*/
+  const sDate = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2)) + '-'
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)).toString().padStart(2, '0') + '-'
+    + sTripDate.slice(0, spcPos).padStart(2, '0');
+
+  const fBody = eMail.getBody();
+
+  let TripTime = between2(fBody, "From", "</tr>", "<td align", "</td>");
+  TripTime = TripTime.slice(TripTime.indexOf(">")+1).trim();
+
+  const TripDateTime = sDate + "T" + TripTime;
+  let aBill = billDate(TripDateTime);
+
+  const TripSumm = between2(fBody, "check__price", "</td>", ">", " ₽").trim();
+  //
+  aBill.summ = TripSumm;
+  aBill.cash = 0.0;
+  aBill.name = 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"';
+  aBill.shop = 'ЯНДЕКС.ТАКСИ';
+  return aBill;
+  //return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: 0.0, name: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"', shop: 'ЯНДЕКС.ТАКСИ'};
+}
+
+function billFASTEN(eMail) {
+  const sTripDate = eMail.getSubject().slice(25);
+  const spcPos = sTripDate.indexOf(" ");
+  const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
+/*
+  var s1 = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2));
+  var ms = sTripDate.slice(spcPos+1, spcPos2);
+  var mn = getMonthNum(ms);
+  var s2 = mn.toString().padStart(2, '0');
+  var s3 = sTripDate.slice(0, spcPos).padStart(2, '0');
+
+  const sDate = s1 + '-' + s2 + '-' + s3;
+*/
+  const sDate = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2)) + '-'
+    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)).toString().padStart(2, '0') + '-'
+    + sTripDate.slice(0, spcPos).padStart(2, '0');
+
+  const fBody = eMail.getBody();
+
+  //if (flgDbg)
+  //  dbgPrintLongString(fBody);
+
+  let TripTime = between2(fBody, "From", "</tr>", "<td align", "</td>");
+  TripTime = TripTime.slice(TripTime.indexOf(">")+1).trim();
+
+  const TripDateTime = sDate + "T" + TripTime;
+  let aBill = billDate(TripDateTime);
+
+  const TripSumm = between2(fBody, "check__price", "</td>", ">", " ₽").trim();
+  //
+  aBill.summ = TripSumm;
+  aBill.cash = 0.0;
+  aBill.name = 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"';
+  aBill.shop = 'ЯНДЕКС.ТАКСИ';
+  return aBill;
+  //return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: 0.0, name: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"', shop: 'ЯНДЕКС.ТАКСИ'};
+}
+
+/*
+ function CutFromPosByTemplate(str, pos, tmplt) {
+  switch(tmplt.pt) {
+    case 0: return cutfrom(str, pos, tmplt.s1, tmplt.e1);
+    case 1: return between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+    case 2:
+        let s = between2from(str, pos, tmplt.s1, tmplt.e1, tmplt.s2, tmplt.e2);
+        return s.slice(s.indexOf(">")+1);
+  }
+  Logger.log("Неизвестный Preprocessing Type " + tmplt.pt + " ");
+  return "";
+ }
+*/
+/* Яндекс
+
+ [{"_id":"6713afe1b206204a5ff995a3","createdAt":"2024-10-19T13:10:57+00:00","ticket":{"document":{"receipt":
+ {"buyerPhoneOrAddress":"+79057685271","cashTotalSum":0,"code":3,"creditSum":0,
+
+ "dateTime":"2024-10-19T03:15:00",
+ "ecashTotalSum":55400,
+ "fiscalDocumentFormatVer":4,"fiscalDocumentNumber":211161,"fiscalDriveNumber":"7386440800040048","fiscalSign":3663930572,
+
+ "fnsUrl":"www.nalog.gov.ru","internetSign":1,
+
+ "items":[
+  {"name":"Перевозка пассажиров и багажа","nds":6,"paymentAgentByProductType":64,"paymentType":4,"price":55400,"productType":1,"providerInn":"504207820709","quantity":1,"sum":55400}
+
+ ],"kktRegId":"0000840607026308    ","machineNumber":"whitespirit2f","nds0":0,"nds10":0,"nds10110":0,"nds18":0,"nds18118":0,"ndsNo":55400,"operationType":1,"prepaidSum":0,
+
+ "properties":{"propertyName":"psp_payment_id","propertyValue":"payment_c9698b303b9347af89dfdb36bb4da522|authorization_0000"},
+ "propertiesData":"ws:CICTKBVPRB","provisionSum":0,"requestNumber":877,"retailPlace":"taxi.yandex.ru",
+ "retailPlaceAddress":"248926, Россия, Калужская обл., г. Калуга, проезд 1-й Автомобильный, дом 8","sellerAddress":"support@go.yandex.com","shiftNumber":233,"taxationType":1,"appliedTaxationType":1,
+
+ "totalSum":55400,
+ "user":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ЯНДЕКС.ТАКСИ\"","userInn":"7704340310  "}}}}]
+
+*/
 /* UBER
 
  [{"_id":"673190cc8359dbbcb6c3f179","createdAt":"2024-11-11T05:06:20+00:00","ticket":{"document":{"receipt":
@@ -224,67 +325,3 @@ function billYandexGo(eMail) {
 }}}]
 
 */
-
-function billUBER(eMail) {
-  const sTripDate = eMail.getSubject().slice(23);
-  const spcPos = sTripDate.indexOf(" ");
-  const spcPos2 = sTripDate.indexOf(" ", spcPos+2);
-
-  const sDate = sTripDate.slice(spcPos2+1, sTripDate.indexOf(" г.", spcPos2+2)) + '-'
-    + getMonthNum(sTripDate.slice(spcPos+1, spcPos2)).toString().padStart(2, '0') + '-'
-    + sTripDate.slice(0, spcPos).padStart(2, '0');
-
-  const fBody = eMail.getBody();
-
-  let TripTime = between2(fBody, "From", "</tr>", "<td align", "</td>");
-  TripTime = TripTime.slice(TripTime.indexOf(">")+1).trim();
-
-  const TripDateTime = sDate + "T" + TripTime;
-  let aBill = billDate(TripDateTime);
-
-  const TripSumm = between2(fBody, "check__price", "</td>", ">", " ₽").trim();
-  //
-  aBill.summ = TripSumm;
-  aBill.cash = 0.0;
-  aBill.name = 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"';
-  aBill.shop = 'ЯНДЕКС.ТАКСИ';
-  return aBill;
-  //return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: 0.0, name: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ЯНДЕКС.ТАКСИ"', shop: 'ЯНДЕКС.ТАКСИ'};
-}
-
-/*
-
-  const sDate = getDateByTemplate(email, mailTmplt.date);
-  const sd = "20" + sDate.slice(6, 8)  // Год
-    + "-" + sDate.slice(3, 5)         // месяц
-    + "-" + sDate.slice(0, 2)         // день
-
-  const tDate = new Date(sd + "T" + sDate.slice(9)); // Дата чека
-  const tDay = new Date(sd + "T00:00:00"); // Дата дня чека
-
-  // Logger.log( "дата ["+ sd + "T" + sDate.slice(9) +"] data " + tDate + " день {" + sd + "T00:00:00" + "} day " + tDay);
-
-  return {
-
- dTime: tDate.getTime(), 
-
- tDate: tDay.getTime(), 
-
- date: sDate, 
-
- summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
-
- "dateTime":"2024-11-18T22:05:00"
-
-  const sDate = sBill.slice(i, sBill.indexOf("\"", i+1));
-  const dDate = new Date(sDate);
-  const aDay = new Date(sDate.slice(0, sDate.indexOf("T")) + "T00:00:00");
-  
-*/
-
-//  return {dTime: tDate.getTime(), tDate: tDay.getTime(), date: sDate, summ: nSumm, cash: nCash, name: sName, shop: billFilterName(sName)};
-//  return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate, summ: iSumm / 100.0, cash: iCash / 100.0, name: sName, shop: sShop};
-
-function billAli(eMail) {
-  //
-}

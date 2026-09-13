@@ -2,12 +2,14 @@
 
  findInRange(rangeName, s) - Поиск в именованном диапазоне.
  findInRule(ruleName, s) - Поиск в списке выбора значения именованного диапазона.
- getDateRangeDefault(rangeName) - Возвращает именованный диапазон с датой. Если дата пуста, то подставляет День1
  getMonthNum(sMonth, capitalLetter) - Возвращает номер месяца по названию.
  getMonthName(dDate) - Возвращает название месяца по дате
  GetGDriveFolderIdFromURL(rng) - Достает URL из Именованной ячейки таблицы.
  getShopInfoRemarkNote(sShop, sUser, lstStores, ssShop) - Возвращает Инфо-Примечание-Заметка для Магазина с листа Магазины или добавляет новый магазин на этот лист
  setCostBill(rSumm, bBill, arrInfoRemarkNote) - Выставляет в строке расходов информацию по чеку
+ SetTargetRule(ss, c, rn) - Присваивает ячейке именованный список значений из именованной ячейки
+ filterDebRule(cell) - Прореживает значения в списке дебитовых счетов, удаляя скрытые колонки
+ filterPayRule(cell) - Заполняет и прореживает значения в списке платежей, удаляя неактуальные/скрытые платежи
 
 */
 
@@ -41,20 +43,6 @@ function findInRule(ruleName, s)
   return -1;
 }
 
-// Возвращает именованный диапазон с датой. Если дата пуста, то подставляет День1
-function getDateRangeDefault(rangeName)
-{
-  const ss = SpreadsheetApp.getActiveSpreadsheet()
-  const r = ss.getRangeByName(rangeName);
-  let d = r.getValue();
-  if (d === "") {
-    const Date0 = ss.getRangeByName('День1').getValue();
-    Logger.log('Последняя дата "' + rangeName + '" не определена. Принимаем дату : ' + Date0);
-    r.setValue(Date0);
-  }
-  return r;
-}
-
 // Присваивает ячейке именованный список значений из именованной ячейки
 function SetTargetRule(ss, c, rn)
 {
@@ -65,6 +53,41 @@ function SetTargetRule(ss, c, rn)
 
   const rule = range.getDataValidation();
   c.setDataValidation(rule);
+}
+
+function filterDebRule(cell)
+{
+  const sss = ss.getSheetByName('Средства');
+  const debs = ss.getRangeByName('СпскСчетаДеб').getValues();
+  const captions = sss.getRange(1,2,1,debs[0].length).getValues();
+  var newDebets = [];
+
+  Logger.log("Фильтруем колонки " + captions[0].toString());
+  for (let i = 0; i < debs[0].length; i++) {
+    if (! sss.isColumnHiddenByUser(i+2))
+      newDebets.push(debs[0][i]);
+    else
+      Logger.log("Колонка " + captions[0][i] + " скрыта");
+  }
+  const rule = SpreadsheetApp.newDataValidation()
+                 .requireValueInList(newDebets, true)
+                 .build();
+
+  const oldDebets = cell.getDataValidation().getCriteriaValues()[0].getValues();
+  Logger.log("Были эти счета :" + oldDebets.toString() + '.');
+  Logger.log("Осатались только эти счета :" + newDebets.toString() + '.');
+
+  cell.setDataValidation(rule);
+  Logger.log("В ячейку " + cell.getA1Notation() 
+    + " установили новую проверку : " + cell.getDataValidation().getCriteriaValues()[0].toString() 
+    + " с критерием " + cell.getDataValidation().getCriteriaType().toString());
+}
+
+function filterPayRule(cell)
+{
+  // СпскПлатежи
+  // Сплит
+  const paymnts = ss.getRangeByName('СпскПлатежи').getValues();
 }
 
 function MonthNum(sMonth)
@@ -118,7 +141,7 @@ function getMonthNum(sMonth, capitalLetter)
       case 'сентября': return 9;
       case 'октября': return 10;
       case 'ноября': return 11;
-      case 'декабря': return 11;
+      case 'декабря': return 12;
       default: return -1;
     }
 }
@@ -190,7 +213,14 @@ function setCostBill(rSumm, bBill, arrInfoRemarkNote)
     .offset(0, 14)
     .setFormula("=НАЗВМЕС(" + A1date + ")");
 
+  var account = "Карман";
   // Если наличные, то выставляем счет списания
-  if (bBill.cash != 0)
-    rSumm.offset(0, 1).setValue("Карман");
+  if (bBill.cash == 0) {
+    account = rSumm
+      .getSheet()
+      .getParent()
+      .getRangeByName('СчетРасходы')
+      .getValue();
+  }
+  rSumm.offset(0, 1).setValue(account);
 }

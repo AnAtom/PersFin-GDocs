@@ -10,8 +10,8 @@
 
 // Заполняет в покупке поля dTime, tDate, date
 function billDate(sDate) {
-  var dDate = new Date(sDate);
-  var i = sDate.indexOf("T");
+  const dDate = new Date(sDate);
+  const i = sDate.indexOf("T");
   const aDay = new Date(sDate.slice(0, i) + "T00:00:00");
   return {dTime: dDate.getTime(), tDate: aDay.getTime(), date: sDate};
 }
@@ -42,7 +42,7 @@ function billInfo(sBill)
 {
   // Проверка, что это json чека
   let i = sBill.indexOf("\"totalSum\":");
-  if (i == -1)
+  if (!~i)
     return undefined;
 
   // Сумма

@@ -1,10 +1,9 @@
 /*
 
- onOpen(e)
- onEdit(e)
+ onOpen(e) - Добавляем пункты меню
+ onEdit(e) - Настраиваем списки выбора
  onOnceAnHour()
  onOnceADay()
- onOnceAMonth()
 
  Редактирование на листе «Операции»
   SettingTrntnName - Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
@@ -17,71 +16,111 @@
 
 */
 
-function getAliExpressBillInfo(BillMail) {
-  const fSubject = BillMail.getSubject();
+var ss;             // текущая таблица
+var act_s;          // активный лист текущей таблицы
+var lstStores = []; // список магазинов
+var flgDbg = false; // флаг отладки
+var rDGB;           // место для вывода отладочной информации
+var isInited = false;
+
+function getFlag(fName) {
+  const f = ss.getRangeByName('Фл' + fName);
+  return f != undefined && f.getValue();
+}
+
+function InitVars(sss) {
+  if (isInited)
+    return;
+  Logger.log("Устанавливаем переменные");
+  ss = sss;
+  act_s = ss.getActiveSheet();
+  rDGB = ss.getSheetByName('dbg').getRange(1, 1);
+  lstStores = ss.getRangeByName('СпскМагазины').getValues();
+  flgDbg = getFlag('Отладка');
+  isInited = true;
+}
+
+function DebugEdit() {
+  //
+  var e = {};
+  e.source = SpreadsheetApp.getActiveSpreadsheet();
+  InitVars(e.source);
+  e.value = 'Перевод';
+  e.range = ss.getSheetByName('Операции').getRange(24,6);
+  onEdit(e);
+}
+
+function MenuChangeYear(NewYear) {
+  //
+  var ui = SpreadsheetApp.getUi();
+
+  NewYear = 2026;
+  var result = ui.alert(
+    "Изменение финансового года",
+    "Создать новую копию для " + NewYear + " года?",
+    ui.ButtonSet.YES_NO,
+  );
+
+  if (result == ui.Button.YES) {
+    //
+    Logger.log("Создаем копию таблицы");
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    // var newSpreadsheet = spreadsheet.copy("Финансы " + NewYear);
+  } else {
+    Logger.log("Меняем год в этой таблице");
+    result = ui.alert(
+      "Изменение этого финансового года",
+      "Очистить все данные по расходкам и платежам?",
+      ui.ButtonSet.YES_NO,
+    );
+    if (result == ui.Button.YES) {
+      //
+      result = ui.alert(
+        "ПРЕДУПРЕЖДЕНИЕ!!!",
+        "Вы уверены, что хотите очистить все расходы и платежи?",
+        ui.ButtonSet.OK_CANCEL,
+      );
+      if (result == ui.Button.CANCEL) return;
+    }
+  }
+
+  // Архивируем в почте чеки label:моё-мани-чеки в label:моё-мани-чеки-старые 
+  // Архивируем в почте label:моё-такси-uber 
+  // Архивируем в почте label:моё-такси-яндекс-go 
+  // label:моё-покупки-ali в label:моё-покупки-ali-старые 
+  // label:моё-покупки-ali-оформлен 
+  // label:моё-покупки-ali-завершён 
+  // Архивируем на диске чеки
+  // Очищаем лист Расходы
+  // Очищаем лист Операции
+  // Очищаем лист Комуналка
+  // Меняем День0 (Средства) ДеньZ (Операции)
+
+  // Создаем тригеры
+
 
 }
 
-function MenuCheckAliExpress() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  const flgDbg = dbgGetFlag(true);
-  
-  // Лист для отладки
-  var rDGB = ss.getSheetByName("dbg").getRange(1, 1);
-
-  var k = 0;
-
-  var label = GmailApp.getUserLabelByName("Моё/Покупки/AliExpress");
-  var threads = label.getThreads();
-  for (var i = 0; i < threads.length; i++) {
-    Logger.log(threads[i].getFirstMessageSubject());
-    var messages = threads[i].getMessages();
-    for (var j = 0; j < messages.length; j++) {
-      var message = messages[j];
-      var subject = message.getSubject();
-      Logger.log( j + " > " + subject + " >> " + subject.indexOf("Ваш номер заказа").toString());
-      if (subject.indexOf("Ваш номер заказа") != -1) {
-        var Body = message.getBody();
-        Logger.log( j + " > " + subject + " [[[ "+ Body.length.toString() +" ]]]");
-
-        if (flgDbg) {
-          rDGB.offset(k, 0).setValue(" > " + subject + " [[[ "+ Body.length.toString() +" ]]]"); 
-          let s = dbgSplitLongString(Body, 4950);
-          rDGB.offset(k, 1, 1, s.length). setValues([s]);
-        }
-                
-        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
-        var bInfo = getAliExpressBillInfo(message);
-
-        k++;
-      } // Тема сообщения "Ваш номер заказа ..."
-      else
-      {
-        var Body = message.getBody();
-        Logger.log( j + " > " + subject + " <<< "+ Body.length.toString() +" >>>");
-
-        if (flgDbg) {
-          rDGB.offset(k, 0).setValue(" # " + subject + " <<< "+ Body.length.toString() +" >>>"); 
-          //dbgSplitLongString(rDGB.offset(k, 1), Body);
-          let s = dbgSplitLongString(Body, 49500);
-          rDGB.offset(k, 1, 1, s.length). setValues([s]);
-        }
-
-        //var bInfo = {summ: "-", date: "-", name: '"AliExpress"', items: [{name:"Перевозка пассажиров и багажа",price:62500,sum:62500,quantity:1.0}];
-        var bInfo = getAliExpressBillInfo(message);
-
-        k++;
-      }
-    } // Сообщения с чеками AliExpress
-  } // Цепочки сообщений с чеками AliExpress
+function checkStr(aValue, strName) {
+  //
+  const strRange = ss.getRangeByName('стр' + strName);
+  if (strRange == undefined)
+    return false;
+  else
+    return aValue == strRange.getValue();
 }
 
 // Устанавливаем доступные счета и Тип операции для выбранной из общего списка операции
 function SettingTrntnName(ss, br) {
   const NewVal = br.getValue();
-  const OpAcc = br.offset(0,-2); // Счет
-  const OpTrgt = br.offset(0,-1); // Цель
+  Logger.log('Изменилась операция на [' + NewVal + ']');
+
+  const InOut = br.offset(0, -5); // +/-
+  if (InOut.getValue() == '')
+    InOut.setFormulaR1C1('=VLOOKUP(R[0]C[5];ОборотInOut;2;FALSE)');
+
+  const OpAcc = br.offset(0, -2); // Счет
+  const OpTrgt = br.offset(0, -1); // Цель
 
   const debit = 'Списание';
   const moving = 'Оборот';
@@ -89,11 +128,14 @@ function SettingTrntnName(ss, br) {
   if (~i)
   {
     // Выбрана оборотная операция
-    br.offset(0,1).setValue(moving);
+    br.offset(0, 1).setValue(moving);
     SetTargetRule(ss, OpAcc, 'СчетаДеб');
 
-    if (NewVal == ss.getRangeByName('стрПеревод').getValue())
+    if (checkStr(NewVal, 'Перевод')) //ss.getRangeByName('стрПеревод').getValue())
+    {
       SetTargetRule(ss, OpTrgt, 'СчетаДеб'); // Перевод
+      filterDebRule(OpTrgt);
+    }
     else
     {
       OpTrgt.clearDataValidations();
@@ -103,9 +145,9 @@ function SettingTrntnName(ss, br) {
   }
   else if (~findInRule(debit, NewVal))
   { // Выбрана опреация списания
-    br.offset(0,1).setValue(debit); // Списовать можем только с деьитовых счетов
+    br.offset(0, 1).setValue(debit); // Списовать можем только с дебитовых счетов
     const credit = 'Кредиты';
-    if (NewVal == ss.getRangeByName('стрПрцКрдт').getValue())
+    if (checkStr(NewVal, 'ПрцКрдт')) //ss.getRangeByName('стрПрцКрдт').getValue())
     { // Проценты по кредиту
       SetTargetRule(ss, OpAcc, credit);
       OpTrgt.clearDataValidations().clearContent();
@@ -113,10 +155,10 @@ function SettingTrntnName(ss, br) {
     else
     {
       SetTargetRule(ss, OpAcc, 'СчетаДеб');
-      if (NewVal == ss.getRangeByName('стрПогКрдт').getValue()) // Погашение кредита
+      if (checkStr(NewVal, 'ПогКрдт')) //ss.getRangeByName('стрПогКрдт').getValue()) // Погашение кредита
         SetTargetRule(ss, OpTrgt, credit);
       else
-        if (NewVal == ss.getRangeByName('стрПлатеж').getValue()) // Платеж
+        if (checkStr(NewVal, 'Платеж')) //ss.getRangeByName('стрПлатеж').getValue()) // Платеж
           SetTargetRule(ss, OpTrgt, 'Платежи');
         else
           OpTrgt.clearDataValidations();
@@ -128,6 +170,7 @@ function SettingTrntnName(ss, br) {
     i = findInRule(receipt, NewVal);
     if (~i) { // Выбрана операция начисления
       br.offset(0,1).setValue(receipt);
+      OpTrgt.clearDataValidations();
       SetTargetRule(ss, OpAcc, 'СчетаДеб');
       if (i < 4)
         OpAcc.setValue("ЗП");
@@ -136,7 +179,7 @@ function SettingTrntnName(ss, br) {
 }
 
 // Устанавливаем соответствующий список операций для выбранного Типа операции
-function SettingTrntnType(ss, br) {
+function SettingTrntnType(br) {
   const NewVal = br.getValue();
   if (ss.getRangeByName(NewVal) == undefined)
     NewVal = 'Операция'; // Устанавливаем полный список операций для выбора если Тип неизвестен
@@ -146,13 +189,15 @@ function SettingTrntnType(ss, br) {
 
 // Устанавливаем список расходов для выбранной статьи расходов
 function SettingCostInfo(ss, br) {
-  const flgDbg = dbgGetFlag(false);
 
+/*
+  const flgDbg = dbgGetFlag(false);
   if (flgDbg)
   {
     var rDGB = ss.getSheetByName('dbg').getRange(1, 1);
   }
   //br.setNote('Test :' + sTest + ' Range :' + rTest.getNumRows());
+*/
 
   const cell = br.offset(0,1);
   const NewVal = br.getValue();
@@ -181,48 +226,75 @@ function SettingCostInfo(ss, br) {
 
 // Устанавливаем список информации для выбранного расхода
 function SettingCostNote(ss, br) {
-  const flgDbg = dbgGetFlag(false);
-  
+
+  //const flgDbg = dbgGetFlag(false);
+/*  
   if (flgDbg)
   {
     // Лист для отладки
     var rDGB = ss.getSheetByName('dbg').getRange(1, 1);
   }
+*/
 
-  const cell = br.offset(0,1);
+  const cell = br.offset(0, 1);
   const NewVal = br.getValue();
 
   if (flgDbg) rDGB.offset(2, 1).setValue(NewVal);
 
-  let range;
+  var range;
   //SpreadsheetApp.getActive().toast('Range :'+ range);
 
-  if (NewVal == 'Продукты') range = ss.getRangeByName('СтРсхЕдаМагаз');
-  else if (NewVal == 'Пиво') range = ss.getRangeByName('СтРсхАлкПиво');
-  else if (NewVal == 'Кабак') range = ss.getRangeByName('СтРсхАлкКабак');
+  switch(NewVal) {
+    case 'Продукты':
+      range = ss.getRangeByName('СтРсхЕдаМагаз');
+      break;
+    case 'Лекарства':
+      range = ss.getRangeByName('СтРсхЗдоровьеАптеки');
+      break;
+    case 'Перекус':
+      range = ss.getRangeByName('СтРсхЕдаПерекус');
+      break;
+    case 'Кофе':
+      range = ss.getRangeByName('СтРсхКофе');
+      break;
+    case 'Пиво':
+      range = ss.getRangeByName('СтРсхАлкПиво');
+      break;
+    case 'Кабак':
+      range = ss.getRangeByName('СтРсхАлкКабак');
+      break;
+    case 'Чаевые':
+      // Используем дату, время и информацию с предыдущей строки
+      br
+      .offset(0, -5).setFormulaR1C1('=R[1]C[0]') // Дата
+      .offset(0, 1).setFormulaR1C1('=R[0]C[-1]') // Время
+      .offset(0, 2).setValue('Карман')           // Счет
+      .offset(0, 3).setFormulaR1C1('=R[1]C[0]'); // Примечание (заведение)
+      break;
+  }
 
   if (range != undefined)
-  {
-    const rule = SpreadsheetApp
-    .newDataValidation()
-    .setAllowInvalid(true)
-    .requireValueInRange(range)
-    .build();
-
-    cell.setDataValidation(rule);
-  }
+    cell.setDataValidation(
+      SpreadsheetApp
+      .newDataValidation()
+      .setAllowInvalid(true)
+      .requireValueInRange(range)
+      .build()
+    );
   else cell.clearDataValidations();
 }
 
 // Читаем информацию о чеке из json строки
-function SettingCostBill(ss, br) {
-  const flgDbg = dbgGetFlag(false);
+function SettingCostBill(br) {
 
+/*
+  const flgDbg = dbgGetFlag(false);
   if (flgDbg)
   {
     // Лист для отладки
     var rDGB = ss.getSheetByName('dbg').getRange(1, 1);
   }
+*/
 
   const NewVal = br.getValue();
   if (NewVal == "") return;
@@ -238,23 +310,13 @@ function SettingCostBill(ss, br) {
   }
 
   if (bill == undefined) return;
-  // Формат ячеек
-  // "dd.mm", "HH:mm", "#,##0.00[$ ₽]"
 
-  // Выставляем сумму покупки
-  br.offset(0, -5)
-  .setValue(bill.summ)
-  .setNumberFormat("#,##0.00[$ ₽]");
-
-  // Выставляем дату покупки и получаем адрес ячейки с датой для выставления времени
-  const A1date = br.offset(0, -7).setValue(bill.date).setNumberFormat("dd.mm").getA1Notation();
-
-  if (flgDbg) rDGB.offset(8, 1).setValue(A1date);
-
-  // Выставляем время покупки
-  br.offset(0, -6)
-  .setValue("=" + A1date)
-  .setNumberFormat("HH:mm");
+  // Выставляем дату, время и сумму покупки
+  // Формат ячеек "dd.mm", "HH:mm", "#,##0.00[$ ₽]"
+  br
+  .offset(0, -7).setValue(bill.date).setNumberFormat("dd.mm")
+  .offset(0, 1).setFormulaR1C1('=R[0]C[-1]').setNumberFormat("HH:mm")
+  .offset(0, 1).setValue(bill.summ).setNumberFormat("#,##0.00[$ ₽]");
 
   // Если наличные, то выставляем счет списания
   if (bill.cash != 0)
@@ -271,37 +333,38 @@ function SettingCostBill(ss, br) {
     sShop.insertRowBefore(newRow);
     sShop.getRange(newRow, 4, 1, 2).setValues([[bill.shop, bill.name]]);
   } else
-    for (let i = 0; i < 3; i++)
-      br.offset(0,i-3).setValue(shop[i]);
+    br
+    .offset(0, -3, 1, 3)
+    .setValues([[shop[0], shop[1], shop[2]]]);
 }
 
 function onOpen(e) {
   const menuScan = [
-    {name: "Чеки AliExpress", functionName: 'MenuCheckAliExpress'},
+    {name: "С новым годом!", functionName: 'MenuChangeYear'},
     null,
     {name: "Очистить отладку", functionName: 'dbgClearSheet'}
   ];
   Logger.log('Добавляем пункты меню.');
-  e.source.addMenu("Сканировать", menuScan);
-  // onOnceAnHour()
+  e.source.addMenu("Действия", menuScan);
+  Logger.log('Открылись.');
 }
 
 function onEdit(e) {
-  const ss = e.source;
-  Logger.log("Редактирование на листе <" + ss.getActiveSheet().getSheetName() + ">");
-  // Читаем флаг "Использовать автосписки"
-  let br = ss.getRangeByName('ФлАвтосписки');
-  if (br == undefined || ! br.getValue()) return;
+  InitVars(e.source);
+  const sname = act_s.getSheetName();
+  Logger.log("Редактирование на листе <" + act_s.getSheetName() + ">");
 
-  br = e.range;
+  if ((sname != 'i') && ! getFlag('Автосписки'))
+    return;
+
+  const br = e.range;
   Logger.log("<" + br + ">");
   Logger.log(">" + br.getA1Notation() + "<");
   if (br.getNumColumns() > 1) // Скопировали диапазон
     return;
 
   const ncol = br.getColumn();
-  const sname = ss.getActiveSheet().getSheetName();
-  let cname = ss.getActiveSheet().getRange(1, ncol).getValue();
+  let cname = act_s.getRange(1, ncol).getValue();
   if (cname == undefined || cname == '')
     cname = ncol;
   Logger.log("Редактируем на листе [" + sname + "] в колонке (" + cname + ") строку :" + br.getRow());
@@ -314,7 +377,7 @@ function onEdit(e) {
           if (v == undefined || v == '') // Устанавливаем полный список операций для выбора если Тип операции был очищен
             SetTargetRule(ss, br.offset(0,-1), 'Операция');
           else
-            SettingTrntnType(ss, br);
+            SettingTrntnType(br);
           return; // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
         case 6: // Изменилась Операция
           SettingTrntnName(ss, br);
@@ -323,9 +386,21 @@ function onEdit(e) {
       }
     case 'Расходы':
       switch(ncol) {
+        case 1:
+          // Изменили дату
+          var mnth=br.offset(0, 15);
+          if (mnth.getValue() == '')
+            mnth.setFormulaR1C1('=НАЗВМЕС(R[0]C[-15])');
+          return;
+        case 2:
+          // Изменили сумму
+          // --- Вставить фильтрацию счетов
+          filterDebRule(br.offset(0,1));
+          return;
         case 5:
           // Изменилась статья расходов
           SettingCostInfo(ss, br);
+          // --- Вставить фильтрацию счетов ?
           return;
         case 6:
           // Изменился пункт статьи расходов (Инфо)
@@ -333,22 +408,24 @@ function onEdit(e) {
           return;
         case 8:
           // Изменилась заметка (вставили чек)
-          SettingCostBill(ss, br);
+          SettingCostBill(br);
           return;
       }
     case 'i':
-      if (ncol == 8 && br.getRow() == 23) {
+      //ФлСохрЧеки
+      if (ncol == 8 && br.getRow() == 20) {
         Logger.log("Переключаем сохранение чеков.");
+        //
+      } else {
         //
       }
   }
 }
 
 function onOnceAnHour() {
+  InitVars(SpreadsheetApp.getActiveSpreadsheet());
   // Выполняется ежечасно
   Logger.log("Обрабатываем последние чеки");
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const dDate0 = ss.getRangeByName('День1').getValue();
 
   let newBills = [];
 
@@ -361,11 +438,15 @@ function onOnceAnHour() {
   billsMail.doScan(billsMail.readData, newBills);
 
   // Сканируем покупки Ali
-  const rLastAliDate = getDateRangeDefault('ДатаЧекAli');
+  //const rLastAliDate = getDateRangeDefault('ДатаЧекAli');
 
   // Сканируем поездки UBER
-  const billsUBER = new MailLabelScaner('Uber');
-  billsUBER.doScan(billUBER, newBills);
+  //const billsUBER = new MailLabelScaner('Uber');
+  //billsUBER.doScan(billUBER, newBills);
+
+  // Сканируем поездки FASTEN
+  const billsFASTEN = new MailLabelScaner('Fasten');
+  billsFASTEN.doScan(billFASTEN, newBills);
 
   // Сканируем поездки Яндекс Go
   const billsYandexGo = new MailLabelScaner('ЯндексGo');
@@ -485,14 +566,14 @@ function onOnceAnHour() {
         costs.insertRowsBefore(firstDateSummRow - 1, iInsrtBill); // Вставляем строки над ней
         Logger.log('^^^ Перемещаем строку ' + underlinedData);
         costs.getRange(firstDateSummRow - 1, 1, 1, 9)
-          .setValues(underlinedData)                              // Сохраняем данные из подчеркнутой строки в первую вставленную
+          .setValues(underlinedData)                              // Переносим данные из подчеркнутой строки в первую вставленную
           .offset(0, 0, 1, 1)                                     // потому, что эта строка будет надписана
           .setNumberFormat("dd.mm")                               // и выставляем правильные форматы для даты, времени и суммы
           .offset(0, 1)
           .setNumberFormat("HH:mm")
           .offset(0, 1)
           .setNumberFormat("#,##0.00[$ ₽]")   ; 
-      } else costs.insertRowsBefore(firstDateSummRow, iInsrtBill);
+      } else costs.insertRowsAfter(firstDateSummRow-1, iInsrtBill);
 
       for (let j = 0; j < iInsrtBill; j++)
         setCostBill(costs.getRange(firstDateSummRow + j, 3), newBills[j], getShopInfoRemarkNote(newBills[j].shop, newBills[j].name, lstStores, lstIgnore, shops));
@@ -536,7 +617,8 @@ function onOnceAnHour() {
   Logger.log("Обновляем даты.");
   billsDrive.updateDate();
   billsMail.updateDate();
-  billsUBER.updateDate();
+  // billsUBER.updateDate();
+  billsFASTEN.updateDate();
   billsYandexGo.updateDate();
 }
 
@@ -544,7 +626,7 @@ function onOnceADay() {
   // Выполняется ежежневно
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // onOnceAnHour();
+  onOnceAnHour();
 
   // Закрываем день.
   Logger.log("Закрываем день.");
@@ -625,7 +707,7 @@ function onOnceADay() {
   }
 
   const topRow = thisDayRow + 1;
-  Logger.log("Сегодня: " + thisDayRow + " вчера: " + prevDayRow + " позавчера: " + oldDayRow + " всего строк: " + (oldDayRow-topRow));
+  Logger.log("Сегодня: " + thisDayRow + " \ вчера: " + prevDayRow + " \ позавчера: " + oldDayRow + " \ всего строк: " + (oldDayRow-topRow));
   prevDayRow = oldDayRow - 1;
 
   if (prevDayRow - thisDayRow == 0) {
@@ -648,20 +730,12 @@ function onOnceADay() {
     // Подчеркиваем снизу если не закончился месяц
     const rPrevDay = costs.getRange(thisDayRow, 1, 1, 10);
     rPrevDay.setBorder(null, null, true, null, null, null);
+  } else {
+    // Закрываем месяц.
+    Logger.log("Закрываем месяц.");
+    const rThisMonth = costs.getRange(thisDayRow, 1, 1, 11);
+    //rThisMonth.setBorder(null, null, true, null, null, null, null, SpreadsheetApp.BorderStyle.DOUBLE);
   }
 
   Logger.log("Закрыли день.")
-}
-
-function onOnceAMonth() {
-  // Закрываем месяц.
-  Logger.log("Закрываем месяц.");
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const costs = ss.getSheetByName("Расходы");
-
-  let thisMonthRow = 26;
-  // Подчеркиваем снизу
-  const rThisMonth = costs.getRange(thisMonthRow, 1, 1, 11);
-  //rThisMonth.setBorder(null, null, true, null, null, null, null, SpreadsheetApp.BorderStyle.DOUBLE);
-
 }

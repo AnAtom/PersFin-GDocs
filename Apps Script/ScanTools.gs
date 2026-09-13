@@ -107,8 +107,13 @@ class MailTemplateScaner extends MailLabelScaner {
     if (~sFrom.indexOf("<"))
       mFrom = between(sFrom, "<", ">");
     const theTmplt = this.eTmplts.find((element) => element.from == mFrom);
-    if (theTmplt == undefined)
+    if (theTmplt == undefined) {
       this.doLog("!!! Неизвестный источник чека :" + sFrom + " Пропускаем письмо !!! " + eMail.getSubject());
+
+      if (dbgGetFlag(false))
+        dbgPrintLongString(eMail.getBody());
+    } else
+      this.doLog("Читаем чек с адреса :" + mFrom + " по шаблону " + theTmplt.key);
 
     return theTmplt;
   }
@@ -123,7 +128,7 @@ class DriveBillsScaner extends BillScaner {
 
   constructor(sRetro) {
     super('Диск');
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    //const ss = SpreadsheetApp.getActiveSpreadsheet();
     
     const nURL = 'ЧекиДиск';
     const folderId = Sheets.Spreadsheets.get(ss.getId(), {ranges: nURL, fields: 'sheets.data.rowData.values.hyperlink'})
@@ -184,7 +189,22 @@ class DriveBillsScaner extends BillScaner {
 
         const bBill = billInfo(sBill);
         arrBills.push(bBill);
-        this.doLog("Чек N " + ++NumBills + " в файле (" + NumFiles + ") " + fBill.getName() + dbgBillInfo(bBill));
+        const bfn = fBill.getName();
+        this.doLog("Чек N " + ++NumBills + " в файле (" + NumFiles + ") " + bfn + dbgBillInfo(bBill));
+
+        if (bfn == "Копия чека") {
+          // Переименовываем
+          const shop = lstStores.find((element) => element[3] == bBill.shop);
+          if (shop != undefined) { // Нашли.
+            this.doLog('Переименовываем файл на диске');
+            let day = new Date(bBill.date).getDate().toString();
+            if (day.length == 1) day = '0' + day;
+            const shopName = shop[2].toLowerCase();
+            const newName = day + ' ' + shopName;
+            this.doLog('Новое имя :' + newName);
+            fBill.setName(newName);
+          }
+        }
       } // цикл файлов в папке
     } // цикл вложенных папок по месяцам
 
