@@ -69,6 +69,8 @@ function getOrderURL(orderNum) {
   // https://market.yandex.ru/my/order/57989200259
   // https://www.ozon.ru/my/orderdetails/?order=18044876-0131
   // https://aliexpress.ru/order-list/5550677229097566
+  // https://fivepost.ru/tracking/?id=99990065057280
+  // https://www.pochta.ru/tracking?barcode=14082426451522
 
   const yandexURL = "market.yandex.ru/my/order/"
   const ozonURL = "www.ozon.ru/my/orderdetails/?order="

@@ -54,32 +54,44 @@ function onEdit(e)
         .mergeVertically()
         .setHorizontalAlignment('center')
         .setFormula('=IMAGE("")');
+
       // Сделали ссылку на стоимость
       sActiveOrders
         .getRange(8, 2)
         .setNumberFormat("#,##0.00[$ ₽]")
         .setFormula("='История'!D3");
+
       // Подчеркнули строку со стоимостью
       sActiveOrders
         .getRange(8, 2, 1, 2)
         .setBorder(null, null, true, null, null, null);
+
       // Сделали ссылку на дату доставки
       sActiveOrders
         .getRange(5, 2)
         .setNumberFormat(" до d mmmm")
         .setFormula("='История'!E3");
+
       // Сделали ссылку на страницу заказа
       sActiveOrders
         .getRange(4, 2)
-        .setFormula("='История'!I3");
+        .setFormula("='История'!J3");
+
       // Сделали ссылку на трэк-номер
       sActiveOrders
         .getRange(6, 2)
         .setFormula("='История'!G3");
+
       // Сделали ссылку на площадку
       sActiveOrders
         .getRange(7, 3)
         .setFormula("='История'!B3");
+
+      // Сделали ссылку на ПВЗ
+      sActiveOrders
+        .getRange(7, 4)
+        .setFormula("='История'!I3");
+
       // Выделили номер заказа жирным
       sActiveOrders
         .getRange(3, 2)
@@ -105,14 +117,16 @@ function onEdit(e)
       sActiveOrders
         .getRange(3, 2)
         .setValue(orderNum);
+
       // Формируем ссылку на заказ
       const valueURL = SpreadsheetApp.newRichTextValue()
         .setText("Товар")
         .setLinkUrl(sURL)
         .build();
       sOrderHistory
-        .getRange(3, 9)
+        .getRange(3, 10)
         .setRichTextValue(valueURL);
+
       Logger.log("Добавили: Номер заказа [" + orderNum + "] ссылка на заказ (" + sURL + ")");
     }
   }
